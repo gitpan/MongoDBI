@@ -1,0 +1,19 @@
+This file documents the revision history for the Perl library MongoDBI.
+
+0.0.1   0000-00-00
+
+-       add support for gridfs fields
+
+-       figure out a means to prevent reserved word, database keyword and schema
+        attribute naming collisions
+
+x       collapsing currently only collapses dirty fields but should be mindful
+        of fields with default values
+
+x       child and relative document class handlers should pass back the
+        document class object reference instead of the handler object ref
+
+x       child and relative document class handlers should be able to handle
+        objects as initial parameters
+
+x       this library is soooo new, .... its new
