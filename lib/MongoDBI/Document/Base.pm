@@ -5,12 +5,12 @@ use warnings;
 
 package MongoDBI::Document::Base;
 {
-    $MongoDBI::Document::Base::VERSION = '0.0.1_01';
+    $MongoDBI::Document::Base::VERSION = '0.0.1_02';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.1_01';    # VERSION
+our $VERSION = '0.0.1_02';    # VERSION
 
 use Moose ('with');
 use Moose::Exporter;
@@ -120,7 +120,7 @@ MongoDBI::Document::Base - Base Class for a MongoDBI Document Class
 
 =head1 VERSION
 
-version 0.0.1_01
+version 0.0.1_02
 
 =head1 AUTHOR
 

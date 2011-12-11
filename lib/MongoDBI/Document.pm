@@ -5,12 +5,12 @@ use warnings;
 
 package MongoDBI::Document;
 {
-    $MongoDBI::Document::VERSION = '0.0.1_01';
+    $MongoDBI::Document::VERSION = '0.0.1_02';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.1_01';    # VERSION
+our $VERSION = '0.0.1_02';    # VERSION
 
 use Moose ('extends');
 
@@ -28,7 +28,7 @@ MongoDBI::Document - Defines and Represents a MongoDB Collection and Document
 
 =head1 VERSION
 
-version 0.0.1_01
+version 0.0.1_02
 
 =head1 SYNOPSIS
 
@@ -221,8 +221,8 @@ accessible as follows:
     }
     
     # or, ... directly access the history
-    $cd->_dirty->{title}->[2]->{new_value}; # 2nd title change
-    $cd->_dirty->{title}->[2]->{old_value}; # value before 2nd title change
+    $cd->_dirty->{title}->[2]->{new_value}; # 3rd title change
+    $cd->_dirty->{title}->[2]->{old_value}; # value before 3rd title change
 
 =head2 CLASS INHERITANCE
 
@@ -294,7 +294,7 @@ can be used:
     ... etc
     
     my $search = CDDB::Album->search;
-       $search = $search->where('released$lt' => DateTime->set(...));
+       $search = $search->where('released$lt' => DateTime->now->set(...));
        $search = $search->asc_sort('title')->limit(25);
        
     my $mongodb_cursor = $search->query;

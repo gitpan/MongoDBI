@@ -5,14 +5,14 @@ use warnings;
 
 package MongoDBI::Document::Storage::Criterion;
 {
-    $MongoDBI::Document::Storage::Criterion::VERSION = '0.0.1_01';
+    $MongoDBI::Document::Storage::Criterion::VERSION = '0.0.1_02';
 }
 
 use Moose;
 
 use 5.001000;
 
-our $VERSION = '0.0.1_01';    # VERSION
+our $VERSION = '0.0.1_02';    # VERSION
 
 has collection => (
     is       => 'ro',
@@ -46,7 +46,19 @@ sub arg_parser {
 
             $key =~ s/$regex$//;
 
-            $args{$key} = {$symbol => delete $args{"$key$symbol"}};
+            if ($symbol eq '$btw') {
+
+                my $values = delete $args{"$key$symbol"};    # arrayref
+
+                $args{$key} = {'$gte' => $values->[0], '$lte' => $values->[1]};
+
+            }
+
+            else {
+
+                $args{$key} = {$symbol => delete $args{"$key$symbol"}};
+
+            }
 
         }
 
@@ -344,7 +356,7 @@ MongoDBI::Document::Storage::Criterion - MongoDBI Chainable Collection Query Bui
 
 =head1 VERSION
 
-version 0.0.1_01
+version 0.0.1_02
 
 =head1 AUTHOR
 

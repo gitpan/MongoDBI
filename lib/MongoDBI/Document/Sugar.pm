@@ -5,12 +5,12 @@ use warnings;
 
 package MongoDBI::Document::Sugar;
 {
-    $MongoDBI::Document::Sugar::VERSION = '0.0.1_01';
+    $MongoDBI::Document::Sugar::VERSION = '0.0.1_02';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.1_01';    # VERSION
+our $VERSION = '0.0.1_02';    # VERSION
 
 use Moose::Role;
 

@@ -5,12 +5,12 @@ use warnings;
 
 package MongoDBI::Application;
 {
-    $MongoDBI::Application::VERSION = '0.0.1_01';
+    $MongoDBI::Application::VERSION = '0.0.1_02';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.1_01';    # VERSION
+our $VERSION = '0.0.1_02';    # VERSION
 
 use Moose ();
 use Moose::Exporter;
@@ -170,7 +170,7 @@ MongoDBI::Application - MongoDBI Application Class and Document Class Controller
 
 =head1 VERSION
 
-version 0.0.1_01
+version 0.0.1_02
 
 =head1 SYNOPSIS
 

@@ -5,12 +5,12 @@ use warnings;
 
 package MongoDBI;
 {
-    $MongoDBI::VERSION = '0.0.1_01';
+    $MongoDBI::VERSION = '0.0.1_02';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.1_01';    # VERSION
+our $VERSION = '0.0.1_02';    # VERSION
 
 use Moose ('extends');
 
@@ -28,7 +28,7 @@ MongoDBI - A proper ODM (Object-Document-Mapper) for MongoDB
 
 =head1 VERSION
 
-version 0.0.1_01
+version 0.0.1_02
 
 =head1 SYNOPSIS
 
@@ -63,9 +63,9 @@ version 0.0.1_01
     my $cds  = $cddb->class('Album'); # grabs CDDB::Album
     
     # find cds released during or after the year 2000
-    my $year_2000 = DateTime->set(year => 2000, month => 1, day => 1);
+    my $year_2000 = DateTime->now->set(year => 2000, month => 1, day => 1);
 
-    my $search $cds->search->where('released$gt' => $year_2000)->query;
+    my $search = $cds->search->where('released$gt' => $year_2000)->query;
     
     while (my $cd = $search->next) {
         
