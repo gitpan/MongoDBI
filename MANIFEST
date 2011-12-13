@@ -11,6 +11,7 @@ lib/MongoDBI/Document.pm
 lib/MongoDBI/Document/Base.pm
 lib/MongoDBI/Document/Child.pm
 lib/MongoDBI/Document/Config.pm
+lib/MongoDBI/Document/GridFile.pm
 lib/MongoDBI/Document/Relative.pm
 lib/MongoDBI/Document/Storage.pm
 lib/MongoDBI/Document/Storage/Criterion.pm

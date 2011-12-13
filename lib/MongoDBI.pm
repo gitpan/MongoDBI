@@ -5,12 +5,12 @@ use warnings;
 
 package MongoDBI;
 {
-    $MongoDBI::VERSION = '0.0.1_02';
+    $MongoDBI::VERSION = '0.0.1';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.1_02';    # VERSION
+our $VERSION = '0.0.1';    # VERSION
 
 use Moose ('extends');
 
@@ -28,7 +28,7 @@ MongoDBI - A proper ODM (Object-Document-Mapper) for MongoDB
 
 =head1 VERSION
 
-version 0.0.1_02
+version 0.0.1
 
 =head1 SYNOPSIS
 
@@ -89,9 +89,9 @@ automated indexing, moose-integration (inheritance support, etc), lean
 document updates via dirty field tracking, and ability for each class to be
 configured to use a different database and connection, etc.
 
-Note! This library is still in its infancy and subject to change. The POD
-(documentation) may also be lacking in certain areas, for additional insight
-you may examine the accompanying tests.
+Note! This library is still in its infancy and subject to change in code and
+in the overall design. The POD (documentation) may also be lacking in certain
+areas, for additional insight you may examine the accompanying tests.
 
 This class, MongoDBI, sub-classes L<MongoDBI::Application>, please review that
 module for more usage information.

@@ -1,11 +1,11 @@
-# ABSTRACT: A Relationship Wrapper Around MongoDBI Relational Documents
+# ABSTRACT: A GridFS Wrapper Around MongoDBI File Documents
 
 use strict;
 use warnings;
 
-package MongoDBI::Document::Relative;
+package MongoDBI::Document::GridFile;
 {
-    $MongoDBI::Document::Relative::VERSION = '0.0.1';
+    $MongoDBI::Document::GridFile::VERSION = '0.0.1';
 }
 
 use 5.001000;
@@ -13,10 +13,11 @@ use 5.001000;
 our $VERSION = '0.0.1';    # VERSION
 
 use Moose;
+use IO::File;
 
 has object => (is => 'rw', isa => 'Any');
 has parent => (is => 'rw', isa => 'Str');
-has target => (is => 'rw', isa => 'Str');
+has target => (is => 'rw', isa => 'MongoDB::GridFS');
 has config => (is => 'rw', isa => 'HashRef', default => sub { {} });
 
 sub add {
@@ -25,7 +26,7 @@ sub add {
 
     return undef unless @args;
 
-    my $class = $self->target;
+    my $gridfs = $self->target;
 
     $self->integrity;
 
@@ -54,22 +55,38 @@ sub add {
 
     if (@args == 1) {
 
-        die "cannot add/embed an object that is not a $class"
-          unless $class eq ref $args[0];
+        if ('IO::File' eq ref $args[0]) {
 
-        $new_obj = $args[0];
+            $new_obj = $gridfs->insert($args[0]);
+
+        }
+
+        else {
+
+            $new_obj = $gridfs->insert(new IO::File delete($args[0]), 'r');
+
+        }
 
     }
 
     else {
 
-        $new_obj = $class->create(@args)
+        my %args = @args;
+
+        die "file (file path) attribute required" unless $args{file};
+
+        my $file =
+          'IO::File' eq ref $args{file}
+          ? delete $args{file}
+          : new IO::File delete($args{file}), 'r';
+
+        $new_obj = $gridfs->insert($file, {%args});
 
     }
 
     $self->config->{type} eq 'multiple'
-      ? push @{$self->object}, $new_obj->_id
-      : $self->object($new_obj->_id);
+      ? push @{$self->object}, $new_obj
+      : $self->object($new_obj);
 
     return $new_obj;
 
@@ -107,7 +124,7 @@ sub get {
     my ($self, $offset, $length) = @_;
 
     my $parent = $self->parent;
-    my $class  = $self->target;
+    my $gridfs = $self->target;
 
     # return single object
     if ($self->config->{type} eq 'single') {
@@ -147,14 +164,14 @@ sub inflate {
     my ($self, $mongo_oid, %args) = @_;
 
     my $parent = $self->parent;
-    my $class  = $self->target;
+    my $gridfs = $self->target;
 
-    # inflate and return a relative object
-    my $record = $class->find_one($mongo_oid->value);
+    # inflate and return a gridfile object
+    my $record = $gridfs->find_one({_id => $mongo_oid});
 
     if ($record && $args{remove}) {
 
-        $record->remove;
+        $gridfs->remove({_id => $mongo_oid}, {just_one => 1});
 
     }
 
@@ -218,13 +235,13 @@ sub remove {
     # return single object
     if ($self->config->{type} eq 'single') {
 
-        my $relative = $self->object;
+        my $gridfile = $self->object;
         $self->object(undef);
 
         # cascade the removal
-        $relative = $self->inflate($relative, remove => 1);
+        $gridfile = $self->inflate($gridfile, remove => 1);
 
-        return $relative;
+        return $gridfile;
 
     }
 
@@ -237,20 +254,20 @@ sub remove {
 
             $offset ||= 0;
 
-            my @relatives =
+            my @gridfiles =
               map { $self->inflate($_, remove => 1) } splice @{$self->object},
               $offset, $length;
 
-            return @relatives;
+            return @gridfiles;
 
         }
 
         elsif (defined $offset) {
 
-            my $relative =
+            my $gridfile =
               $self->inflate(delete $self->object->[$offset], remove => 1);
 
-            return $relative;
+            return $gridfile;
 
         }
 
@@ -272,7 +289,7 @@ __END__
 
 =head1 NAME
 
-MongoDBI::Document::Relative - A Relationship Wrapper Around MongoDBI Relational Documents
+MongoDBI::Document::GridFile - A GridFS Wrapper Around MongoDBI File Documents
 
 =head1 VERSION
 

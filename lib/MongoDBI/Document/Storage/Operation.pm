@@ -5,18 +5,20 @@ use warnings;
 
 package MongoDBI::Document::Storage::Operation;
 {
-    $MongoDBI::Document::Storage::Operation::VERSION = '0.0.1_02';
+    $MongoDBI::Document::Storage::Operation::VERSION = '0.0.1';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.1_02';    # VERSION
+our $VERSION = '0.0.1';    # VERSION
 
 use Moose::Role;
 
 use MongoDB::OID;
 use MongoDBI::Document::Storage::Criterion;
 use MongoDBI::Document::Child;
+use MongoDBI::Document::Relative;
+use MongoDBI::Document::GridFile;
 
 sub all {
 
@@ -68,11 +70,45 @@ sub collapse {
 
     }
 
-    # collapse embedded doc classes
+    # collapse related doc classes
     while (my ($name, $config) = each(%{$self->config->fields})) {
 
+        # collapse embedded gridfs documents
+        if ($config->{isa} eq 'MongoDBI::Document::GridFile') {
+
+            if ($config->{type} eq 'single') {
+
+                my $grids  = $self->$name->target;
+                my $object = $self->$name->object;
+
+                if ($object) {
+
+                    $data->{$name} = $object;
+
+                }
+
+            }
+
+            if ($config->{type} eq 'multiple') {
+
+                if ("ARRAY" eq ref $self->$name->object) {
+
+                    my $grids = $self->$name->target;
+
+                    foreach my $object (@{$self->$name->object}) {
+
+                        push @{$data->{$name}}, $object;
+
+                    }
+
+                }
+
+            }
+
+        }
+
         # collapse embedded documents
-        if ($config->{isa} eq 'MongoDBI::Document::Child') {
+        elsif ($config->{isa} eq 'MongoDBI::Document::Child') {
 
             if ($config->{type} eq 'single') {
 
@@ -215,44 +251,106 @@ sub expand {
 
     my ($class, %data) = @_;
 
-    my %args = ();    # expanded attribute data
+    $class = ref $class || $class;    # ensure class-hood
+
+    my %args = ();                    # expanded attribute data
+
+    # ...
+    my $config  = $class->config;
+    my $db_name = $config->database->{name};
+    my $conn    = $config->_mongo_connection;
+
+    # fetch the gridfs object, it may be needed
+    my $grid_fs = $conn->get_database($db_name)->get_gridfs;
 
     # expand $data into class attributes
     while (my ($name, $config) = each(%{$class->config->fields})) {
 
-        if ($config->{isa} eq 'MongoDBI::Document::Child') {
+        if ($config->{isa} eq 'MongoDBI::Document::GridFile') {
+
+            if ($config->{type} eq 'single') {
+
+                my %gridfile_args = %{$config};
+                my $gridfile      = MongoDBI::Document::GridFile->new(
+                    parent => $class,
+                    target => $grid_fs,
+                    config => {%gridfile_args},
+                );
+
+                $gridfile->object($data{$name});
+
+                $args{$name} = $gridfile;
+
+            }
+
+            elsif ($config->{type} eq 'multiple') {
+
+                if ("ARRAY" eq ref $data{$name}) {
+
+                    my %gridfile_args = %{$config};
+                    delete $gridfile_args{class};
+                    my $gridfile = MongoDBI::Document::GridFile->new(
+                        parent => $class,
+                        target => $grid_fs,
+                        config => {%gridfile_args},
+                    );
+
+                    $gridfile->object([])
+                      unless "ARRAY" eq ref $gridfile->object;
+
+                    foreach my $doc (@{$data{$name}}) {
+
+                        push @{$gridfile->object}, $doc;
+
+                    }
+
+                    $args{$name} = $gridfile;
+
+                }
+
+            }
+
+        }
+
+        elsif ($config->{isa} eq 'MongoDBI::Document::Child') {
 
             if ($config->{type} eq 'single') {
 
                 my %child_args = %{$config};
                 delete $child_args{class};
                 my $child = MongoDBI::Document::Child->new(
-                    parent => ref $class || $class,
+                    parent => $class,
                     target => $config->{class},
                     config => {%child_args},
                 );
 
-                $child->add(%{$data{$name}});
+                # children can have children
+                my @good_data = $config->{class}->expand(%{$data{$name}});
+
+                $child->add(@good_data);
 
                 $args{$name} = $child;
 
             }
 
-            if ($config->{type} eq 'multiple') {
+            elsif ($config->{type} eq 'multiple') {
 
                 if ("ARRAY" eq ref $data{$name}) {
 
                     my %child_args = %{$config};
                     delete $child_args{class};
                     my $child = MongoDBI::Document::Child->new(
-                        parent => ref $class || $class,
+                        parent => $class,
                         target => $config->{class},
                         config => {%child_args},
                     );
 
                     foreach my $doc (@{$data{$name}}) {
 
-                        $child->add(%{$doc});
+                        # children can have children, yeah
+                        my @good_data = $config->{class}->expand(%{$doc});
+
+                        $child->add(@good_data);
 
                     }
 
@@ -270,7 +368,7 @@ sub expand {
 
                 my %relative_args = %{$config};
                 my $relative      = MongoDBI::Document::Relative->new(
-                    parent => ref $class || $class,
+                    parent => $class,
                     target => $config->{class},
                     config => {%relative_args},
                 );
@@ -281,22 +379,22 @@ sub expand {
 
             }
 
-            if ($config->{type} eq 'multiple') {
+            elsif ($config->{type} eq 'multiple') {
 
                 if ("ARRAY" eq ref $data{$name}) {
 
                     my %relative_args = %{$config};
                     delete $relative_args{class};
                     my $relative = MongoDBI::Document::Relative->new(
-                        parent => ref $class || $class,
+                        parent => $class,
                         target => $config->{class},
                         config => {%relative_args},
                     );
 
-                    foreach my $doc (@{$data{$name}}) {
+                    $relative->object([])
+                      unless "ARRAY" eq ref $relative->object;
 
-                        $relative->object([])
-                          unless "ARRAY" eq ref $relative->object;
+                    foreach my $doc (@{$data{$name}}) {
 
                         push @{$relative->object}, $doc->{'$id'};
 
@@ -663,7 +761,7 @@ MongoDBI::Document::Storage::Operation - Standard MongoDBI Document/Collection O
 
 =head1 VERSION
 
-version 0.0.1_02
+version 0.0.1
 
 =head1 AUTHOR
 

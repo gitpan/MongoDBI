@@ -1,16 +1,16 @@
-# A Relationship Wrapper Around MongoDBI Embedded Documents
+# ABSTRACT: A Relationship Wrapper Around MongoDBI Embedded Documents
 
 use strict;
 use warnings;
 
 package MongoDBI::Document::Child;
 {
-    $MongoDBI::Document::Child::VERSION = '0.0.1_02';
+    $MongoDBI::Document::Child::VERSION = '0.0.1';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.1_02';    # VERSION
+our $VERSION = '0.0.1';    # VERSION
 
 use Moose;
 
@@ -62,7 +62,7 @@ sub add {
 
     else {
 
-        $new_obj = $class->find_or_new(@args)
+        $new_obj = $class->new(@args)
 
     }
 
@@ -182,3 +182,29 @@ sub remove {
 }
 
 1;
+
+__END__
+
+=pod
+
+=head1 NAME
+
+MongoDBI::Document::Child - A Relationship Wrapper Around MongoDBI Embedded Documents
+
+=head1 VERSION
+
+version 0.0.1
+
+=head1 AUTHOR
+
+Al Newkirk <awncorp@cpan.org>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2011 by awncorp.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
+=cut
+

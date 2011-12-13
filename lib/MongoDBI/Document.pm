@@ -5,12 +5,12 @@ use warnings;
 
 package MongoDBI::Document;
 {
-    $MongoDBI::Document::VERSION = '0.0.1_02';
+    $MongoDBI::Document::VERSION = '0.0.1';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.1_02';    # VERSION
+our $VERSION = '0.0.1';    # VERSION
 
 use Moose ('extends');
 
@@ -28,7 +28,7 @@ MongoDBI::Document - Defines and Represents a MongoDB Collection and Document
 
 =head1 VERSION
 
-version 0.0.1_02
+version 0.0.1
 
 =head1 SYNOPSIS
 
@@ -342,7 +342,7 @@ parent document. The relational (referenced) document relationship describes
 a document(s) referenced by separate document in separate collection.
 
 MongoDBI::Document classes declared to be related to other document classes are
-wrapped by object-based proxies for the actual document class which provide
+wrapped by object-based proxies for the actual document class which provides
 functionality for accessing, replacing, appending and persisting.
 
 Consider the following example which declares both an embedded and relational

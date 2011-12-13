@@ -22,13 +22,14 @@ my %WriteMakefileArgs = (
   "PREREQ_PM" => {
     "Carp" => 0,
     "DateTime" => 0,
+    "IO::File" => 0,
     "Module::Find" => 0,
     "MongoDB" => 0,
     "Moose" => 0,
     "MooseX::Traits" => 0,
     "Scalar::Util" => 0
   },
-  "VERSION" => "0.0.1_02",
+  "VERSION" => "0.0.1",
   "test" => {
     "TESTS" => "t/*.t"
   }

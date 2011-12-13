@@ -1,16 +1,16 @@
-# Syntactic Sugar For Defining MongoDBI Document Classes
+# ABSTRACT: Syntactic Sugar For Defining MongoDBI Document Classes
 
 use strict;
 use warnings;
 
 package MongoDBI::Document::Sugar;
 {
-    $MongoDBI::Document::Sugar::VERSION = '0.0.1_02';
+    $MongoDBI::Document::Sugar::VERSION = '0.0.1';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.1_02';    # VERSION
+our $VERSION = '0.0.1';    # VERSION
 
 use Moose::Role;
 
@@ -22,6 +22,7 @@ use Moose::Exporter;
 
 use MongoDBI::Document::Child;
 use MongoDBI::Document::Relative;
+use MongoDBI::Document::GridFile;
 
 Moose::Exporter->setup_import_methods(
 
@@ -31,6 +32,7 @@ Moose::Exporter->setup_import_methods(
           chain
           config
           embed
+          file
           index
           has_many
           has_one
@@ -134,6 +136,51 @@ sub embed {
     );
 
     return $relative;
+
+}
+
+sub file {
+
+    my ($meta, $name, %args) = @_;
+
+    my $config = find_or_create_cfg_attribute($meta);
+
+    confess("config attribute not present") unless blessed($config);
+
+    return undef unless ($name);
+
+    $args{type} ||= 'single';
+
+    my $fields = $config->fields;
+    $fields->{$name} = {
+        %args,
+        is  => 'rw',
+        isa => 'MongoDBI::Document::GridFile'
+    };
+
+    my $gridfile = $meta->add_attribute(
+        $name,
+        'is'      => 'rw',
+        'isa'     => 'MongoDBI::Document::GridFile',
+        'lazy'    => 1,
+        'default' => sub {
+
+            my $package = $meta->{package};
+            my $conf    = $package->config;
+            my $db_name = $conf->database->{name};
+            my $conn    = $conf->_mongo_connection;
+            my $grid_fs = $conn->get_database($db_name)->get_gridfs;
+
+            MongoDBI::Document::GridFile->new(
+                parent => $package,
+                target => $grid_fs,
+                config => {%args}
+              )
+
+        }
+    );
+
+    return $gridfile;
 
 }
 
@@ -464,3 +511,28 @@ sub store {
 no Moose::Exporter;
 
 1;
+__END__
+
+=pod
+
+=head1 NAME
+
+MongoDBI::Document::Sugar - Syntactic Sugar For Defining MongoDBI Document Classes
+
+=head1 VERSION
+
+version 0.0.1
+
+=head1 AUTHOR
+
+Al Newkirk <awncorp@cpan.org>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2011 by awncorp.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
+=cut
+

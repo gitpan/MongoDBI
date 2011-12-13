@@ -5,14 +5,14 @@ use warnings;
 
 package MongoDBI::Document::Config;
 {
-    $MongoDBI::Document::Config::VERSION = '0.0.1_02';
+    $MongoDBI::Document::Config::VERSION = '0.0.1';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.1_02';    # VERSION
+our $VERSION = '0.0.1';    # VERSION
 
-use Moose::Role;              # is trait (++ :)
+use Moose::Role;           # is trait (++ :)
 
 has _mongo_connection => (
     is  => 'rw',
@@ -129,7 +129,7 @@ MongoDBI::Document::Config - Configuration for a MongoDBI Document Class
 
 =head1 VERSION
 
-version 0.0.1_02
+version 0.0.1
 
 =head1 AUTHOR
 

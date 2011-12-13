@@ -1,15 +1,21 @@
 This file documents the revision history for the Perl library MongoDBI.
 
-0.0.0   0000-00-00
-
--       add support for gridfs fields
-
 -       add the ability to raise/print errors much like DBI.pm's API, and also
         allow this configuration to be specified on the app controller thus
         auto-configuring all associated classes
 
 -       figure out a means to prevent reserved word, database keyword and schema
         attribute naming collisions
+        
+-       database connection pooling with the ability to read and write to
+        different connections
+
+0.0.1   2011-12-12
+
+x       properly traverses children of children of child documents (n) levels
+        deep
+
+x       added support for gridfs fields
 
 x       collapsing currently only collapses dirty fields but should be mindful
         of fields with default values
