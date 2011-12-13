@@ -1,16 +1,16 @@
-# ABSTRACT: A proper ODM (Object-Document-Mapper) for MongoDB
+# ABSTRACT: A proper ODM (Object-Document-Mapper) for MongoDB 
 
 use strict;
 use warnings;
 
 package MongoDBI;
 {
-    $MongoDBI::VERSION = '0.0.1';
+  $MongoDBI::VERSION = '0.0.2';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.1';    # VERSION
+our $VERSION = '0.0.2'; # VERSION
 
 use Moose ('extends');
 
@@ -19,7 +19,6 @@ extends 'MongoDBI::Application';
 
 1;
 __END__
-
 =pod
 
 =head1 NAME
@@ -28,7 +27,7 @@ MongoDBI - A proper ODM (Object-Document-Mapper) for MongoDB
 
 =head1 VERSION
 
-version 0.0.1
+version 0.0.2
 
 =head1 SYNOPSIS
 
@@ -60,7 +59,7 @@ version 0.0.1
     
     my $cddb = CDDB->new;
     
-    my $cds  = $cddb->class('Album'); # grabs CDDB::Album
+    my $cds  = $cddb->class('album'); # grabs CDDB::Album
     
     # find cds released during or after the year 2000
     my $year_2000 = DateTime->now->set(year => 2000, month => 1, day => 1);

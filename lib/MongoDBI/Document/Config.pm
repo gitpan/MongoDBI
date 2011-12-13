@@ -5,23 +5,23 @@ use warnings;
 
 package MongoDBI::Document::Config;
 {
-    $MongoDBI::Document::Config::VERSION = '0.0.1';
+  $MongoDBI::Document::Config::VERSION = '0.0.2';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.1';    # VERSION
+our $VERSION = '0.0.2'; # VERSION
 
-use Moose::Role;           # is trait (++ :)
+use Moose::Role; # is trait (++ :)
 
 has _mongo_connection => (
-    is  => 'rw',
-    isa => 'MongoDB::Connection'
+    is      => 'rw',
+    isa     => 'MongoDB::Connection'
 );
 
 has _mongo_collection => (
-    is  => 'rw',
-    isa => 'MongoDB::Collection'
+    is      => 'rw',
+    isa     => 'MongoDB::Collection'
 );
 
 has collection => (
@@ -56,7 +56,7 @@ has indexes => (
     default => sub { [] }
 );
 
-has scopes => (
+has scopes  => (
     is      => 'rw',
     isa     => 'HashRef',
     default => sub { {} }
@@ -64,28 +64,28 @@ has scopes => (
 
 sub set_database {
     my ($self, @args) = @_;
-
+    
     my %args = @args == 1 ? (name => $args[0]) : @args;
-
+    
     $args{name} ||= $self->database->{name};
-
+    
     die "Please specify the name of the database" unless $args{name};
-
+    
     $self->database->{$_} = $args{$_} for keys %args;
-
+    
     return $self;
 }
 
 sub set_collection {
     my ($self, @args) = @_;
-
+    
     my %args = @args == 1 ? (name => $args[0]) : @args;
-
-    $args{name} 
-      ||= $self->collection->{name}
-      || delete $self->collection->{db_name}
-      || $self->associated_class->{package};
-
+    
+    $args{name}
+        ||= $self->collection->{name}
+        ||  delete $self->collection->{db_name}
+        ||  $self->associated_class->{package};
+    
     my %naming_template = (
         same       => sub { $_[0] },
         short      => sub { $_[0] =~ s{^.*\:\:(.*?)$}{$1}g; $_[0] },
@@ -96,31 +96,31 @@ sub set_collection {
         lc         => sub { lc $_[0] },
         upper      => sub { uc $_[0] },
         uc         => sub { uc $_[0] },
-        default => sub {
+        default    => sub {
             $_[0] =~ s{([a-z])([A-Z])}{$1_$2}g;
             $_[0] =~ s{\:\:}{_}g;
             lc "$_[0]s";
         }
     );
-
+    
     # handle naming conventions
-    $args{naming} ||= $self->collection->{naming}
-      || 'default';
-
+    $args{naming}
+        ||= $self->collection->{naming}
+        ||  'default';
+        
     $args{naming} = [$args{naming}] unless "ARRAY" eq ref $args{naming};
-
+    
     foreach my $template (@{$args{naming}}) {
         $args{name} = $naming_template{$template}->($args{name});
     }
-
+    
     $self->collection->{$_} = $args{$_} for keys %args;
-
+    
     return $self;
 }
 
 1;
 __END__
-
 =pod
 
 =head1 NAME
@@ -129,7 +129,7 @@ MongoDBI::Document::Config - Configuration for a MongoDBI Document Class
 
 =head1 VERSION
 
-version 0.0.1
+version 0.0.2
 
 =head1 AUTHOR
 

@@ -4,7 +4,7 @@ MongoDBI - A proper ODM (Object-Document-Mapper) for MongoDB
 
 # VERSION
 
-version 0.0.1
+version 0.0.2
 
 # SYNOPSIS
 
@@ -45,7 +45,7 @@ version 0.0.1
     my $cddb = CDDB->new;
     
 
-    my $cds  = $cddb->class('Album'); # grabs CDDB::Album
+    my $cds  = $cddb->class('album'); # grabs CDDB::Album
     
 
     # find cds released during or after the year 2000

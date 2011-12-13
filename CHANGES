@@ -10,6 +10,11 @@ This file documents the revision history for the Perl library MongoDBI.
 -       database connection pooling with the ability to read and write to
         different connections
 
+0.0.2   2011-12-13
+
+x       more documentation, starting more tests to test chaining and searching
+        capabilities
+        
 0.0.1   2011-12-12
 
 x       properly traverses children of children of child documents (n) levels

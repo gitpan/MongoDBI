@@ -23,13 +23,14 @@ my %WriteMakefileArgs = (
     "Carp" => 0,
     "DateTime" => 0,
     "IO::File" => 0,
+    "JSON" => 0,
     "Module::Find" => 0,
     "MongoDB" => 0,
     "Moose" => 0,
     "MooseX::Traits" => 0,
     "Scalar::Util" => 0
   },
-  "VERSION" => "0.0.1",
+  "VERSION" => "0.0.2",
   "test" => {
     "TESTS" => "t/*.t"
   }
