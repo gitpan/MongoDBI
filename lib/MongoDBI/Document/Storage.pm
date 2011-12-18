@@ -5,16 +5,18 @@ use warnings;
 
 package MongoDBI::Document::Storage;
 {
-  $MongoDBI::Document::Storage::VERSION = '0.0.2';
+  $MongoDBI::Document::Storage::VERSION = '0.0.3';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.2'; # VERSION
+our $VERSION = '0.0.3'; # VERSION
 
 use Moose::Role; # is trait
 
 use MongoDB::Connection;
+
+
 
 sub connect {
     
@@ -56,14 +58,12 @@ sub connect {
     
 }
 
+
 sub disconnect {
     
     my ($self) = @_;
     
     my $cfg = $self->config;
-    
-    # ensure a database and collection are set
-    $cfg->set_database({});
     
     $cfg->_mongo_connection(undef);
     
@@ -85,7 +85,67 @@ MongoDBI::Document::Storage - MongoDBI Document Storage Interface
 
 =head1 VERSION
 
-version 0.0.2
+version 0.0.3
+
+=head1 SYNOPSIS
+
+    package main;
+
+    my $cds = CDDB::Album;
+    
+    ...
+    
+    $cds->connect(username => '...', password => '....');
+    
+    1;
+
+=head1 DESCRIPTION
+
+MongoDBI::Document::Storage is a role that provides database-specific
+functionality to your MongoDBI document classes.
+
+=head1 METHODS
+
+=head2 connect
+
+The connect method is responsible for establishing the document class's
+connection to the MongoDB database. This methods accepts all valid
+arguments accepted by L<MongoDB::Connection>.
+
+It is important to note that if no collection name exists when the connect
+method is called ... an attempt to auto generate one for you will be made. Also,
+it is likely that your connection will fail unless a database name is set.
+
+    package main;
+
+    my $cds = CDDB::Album;
+    
+    $cds->config->set_database('test');
+    
+    $cds->connect(username => '...', password => '....');
+    
+    1;
+
+=head2 disconnect
+
+The disconnect method doesn't actually disconnect you from the database server,
+it merely nullifies the MongoDB::Connection object set in your document classes
+configuration. This method can be used to switch between and perform operations
+across database hosts/connections.
+
+    package main;
+
+    my $cds = CDDB::Album;
+    
+    $cds->config->set_database('test');
+    
+    $cds->connect(username => '...', password => '....');
+    
+    ...
+    
+    $cds->disconnect;
+    
+    1;
 
 =head1 AUTHOR
 

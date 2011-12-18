@@ -5,12 +5,12 @@ use warnings;
 
 package MongoDBI;
 {
-  $MongoDBI::VERSION = '0.0.2';
+  $MongoDBI::VERSION = '0.0.3';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.2'; # VERSION
+our $VERSION = '0.0.3'; # VERSION
 
 use Moose ('extends');
 
@@ -27,7 +27,7 @@ MongoDBI - A proper ODM (Object-Document-Mapper) for MongoDB
 
 =head1 VERSION
 
-version 0.0.2
+version 0.0.3
 
 =head1 SYNOPSIS
 
@@ -73,6 +73,10 @@ version 0.0.2
     }
 
 =head1 DESCRIPTION
+
+Why MongoDB?
+"MongoDB has the best features of document, key/value and relational
+databases. --that was a period"
 
 MongoDBI is an Object-Document-Mapper (ODM) for L<MongoDB>. It allows you to
 create L<Moose>-based classes to interact with MongoDB databases. Born out of

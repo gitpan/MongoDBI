@@ -9,6 +9,23 @@ This file documents the revision history for the Perl library MongoDBI.
         
 -       database connection pooling with the ability to read and write to
         different connections
+        
+-       enable safe_mode by default with the option to turn it off
+
+-       process indexing so that order is preserved
+
+-       add paging convenience method to M::D::S::Criterion
+
+-       add is_id, and is_inc to M::D::Sugar. is_inc will auto-increment the
+        field when collapsing occurs (usually on save or insert), and is_id
+        adds a constraint that the field must be a MongoDB::OID
+        
+0.0.3   2011-12-17
+
+x       the chaining keyword, methods, etc have been renamed filter/filtering
+        and has a very different syntax
+        
+x       wrote POD for all classes in need
 
 0.0.2   2011-12-13
 

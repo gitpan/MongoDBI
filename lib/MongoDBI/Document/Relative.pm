@@ -5,19 +5,28 @@ use warnings;
 
 package MongoDBI::Document::Relative;
 {
-  $MongoDBI::Document::Relative::VERSION = '0.0.2';
+  $MongoDBI::Document::Relative::VERSION = '0.0.3';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.2'; # VERSION
+our $VERSION = '0.0.3'; # VERSION
 
 use Moose;
 
+
+
 has object      => ( is => 'rw', isa => 'Any' );
-has parent      => ( is => 'rw', isa => 'Str' );
-has target      => ( is => 'rw', isa => 'Str' );
+
+
+has parent      => ( is => 'rw', isa => 'Str', required => 1 );
+
+
+has target      => ( is => 'rw', isa => 'Str', required => 1 );
+
+
 has config      => ( is => 'rw', isa => 'HashRef', default => sub { {} } );
+
 
 sub add {
     
@@ -74,6 +83,7 @@ sub add {
     
 }
 
+
 sub count {
     
     my ($self) = @_;
@@ -100,6 +110,7 @@ sub count {
     return 0;
     
 }
+
 
 sub get {
     
@@ -203,6 +214,7 @@ sub integrity {
     
 }
 
+
 sub remove {
     
     my ($self, $offset, $length) = @_;
@@ -271,7 +283,163 @@ MongoDBI::Document::Relative - A Relationship Wrapper Around MongoDBI Relational
 
 =head1 VERSION
 
-version 0.0.2
+version 0.0.3
+
+=head1 SYNOPSIS
+
+    # create a relational/reference document relationship for CDDB::Album
+    
+    my $tracks = MongoDBI::Document::Relative->new(
+        parent => 'CDDB::Album',
+        target => 'CDDB::Track',
+        config => { multiple => 1 }
+    );
+    
+    $tracks->add(...); 
+
+=head1 DESCRIPTION
+
+MongoDBI::Document::Relative represents a MongoDB relational/reference document
+and is designed to be assigned to attributes in a parent document class.
+MongoDBI::Document::Relative provides a standardized API for handling
+relationship concerns (e.g. adding, selecting, and removing related documents).
+
+This relationship identification class is used automatically by the "has_one",
+"has_many", and "belongs_to" keywords provided by L<MongoDBI::Document::Sugar>.
+
+The purpose of using this and other relationship identification/wrapper classes
+is that it provides the MongoDBI serialization/deserialization mechanisms with a
+standard API.
+
+=head1 ATTRIBUTES
+
+=head2 object
+
+The object attribute can contain an instance of the class target (or an array of
+instances if the "multiple" configuration variable is true. You will likely
+never need to access this attribute directly because access and manipulation of
+the object(s) are made available through method calls.
+
+=head2 parent
+
+The parent attribute is required and should contain the fully-qualified class
+name of the parent document class. Once set you will likely never need to access
+this attribute directly.
+
+=head2 target
+
+The target attribute is required and should contain the fully-qualified class
+name of the document class to be used as a relational document class. Once set
+you will likely never need to access this attribute directly.
+
+=head2 config
+
+The config attribute can contain a hashref of key/value arguments which control
+how method calls manipulate the class instance(s) stored in the object attribute.
+
+    # forces the object attribute to become an arrayref having instances
+    # append the object attribute
+    
+    MongoDBI::Document::Relative->new(
+        ...,
+        config => { multiple => 1 }
+    );
+
+=head1 METHODS
+
+=head2 add
+
+The add method expects key/value arguments which will be passed to the create
+method of the class defined in the target attribute, or, a single argument which
+must be an instance of the class defined in the target attribute.
+
+The add method adds, replaces or appends the object attribute based on the
+configuration in the config attribute.
+
+    my $tracks = MongoDBI::Document::Relative->new(
+        ..., config => { multiple => 1 }
+    );
+    
+    $tracks->add(...);
+    $tracks->add(...);
+    $tracks->add(...); # we've added three tracks
+    
+    my $tracks = MongoDBI::Document::Relative->new(
+        ..., config => {  }
+    );
+    
+    $tracks->add(...);
+    $tracks->add(...); # we've replace the original track
+
+The arguments passed to the add method must be attributes existing on the class
+defined in the target attribute.
+
+=head2 count
+
+The count method simply returns the number of objects existing in the object
+attribute.
+
+    my $tracks = MongoDBI::Document::Relative->new(
+        ..., config => { multiple => 1 }
+    );
+    
+    $tracks->add(...);
+    $tracks->add(...);
+    $tracks->add(...); 
+    
+    $tracks->count(); # we've added three tracks
+
+=head2 get
+
+The get method retrieves a particular object instance from the object attribute
+(store), if configured for multiple objects, it accepts an index (starting at 0)
+which will return the object instance at that position, or a starting and ending
+index which returns object instances within that range.
+
+    my $tracks = MongoDBI::Document::Relative->new(
+        ..., config => { multiple => 1 }
+    );
+    
+    $tracks->add(...);
+    $tracks->add(...);
+    $tracks->add(...);
+    $tracks->add(...);
+    $tracks->add(...);
+    $tracks->add(...);
+    $tracks->add(...);
+    $tracks->add(...);
+    $tracks->add(...); 
+    
+    my $track1 = $tracks->get(0);
+    my @tracks_first5 = $tracks->get(0, 4);
+
+=head2 remove
+
+The remove method retrieves and removes a particular object instance from the
+object attribute (store), if configured for multiple objects, it accepts an
+index (starting at 0) which will delete and return the object instance at that
+position, or a starting and ending index which deletes and returns object
+instances within that range (as you would expect the native Perl splice function
+to operate).
+
+    my $tracks = MongoDBI::Document::Relative->new(
+        ..., config => { multiple => 1 }
+    );
+    
+    $tracks->add(...);
+    $tracks->add(...);
+    $tracks->add(...);
+    $tracks->add(...);
+    $tracks->add(...);
+    $tracks->add(...);
+    $tracks->add(...);
+    $tracks->add(...);
+    $tracks->add(...); # added 9 tracks
+    
+    my $track1 = $tracks->remove(0);
+    my @tracks_next5 = $tracks->remove(0, 4);
+    
+    print $tracks->count; # prints 3
 
 =head1 AUTHOR
 

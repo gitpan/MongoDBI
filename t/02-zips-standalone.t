@@ -25,7 +25,7 @@ key 'loc', is_hash;
 key 'pop', is_int;
 key 'state', is_str;
 
-chain 'in_tristate_area' => sub {
+filter 'in_tristate_area' => sub {
     shift->where('state$in' => ['PA','NJ','DE'])
 };
 
@@ -65,7 +65,7 @@ ok $locale->pop() =~ /^\d+$/, 'locale population set ok';
 
 # let the chaining/searching begin ...
 
-my $search = $zips->in_tristate_area->query;
+my $search = $zips->search('in_tristate_area')->query;
    
 ok $search->count > 1, 'found cities in the tri-state area';
 

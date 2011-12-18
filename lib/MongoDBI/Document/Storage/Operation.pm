@@ -5,12 +5,12 @@ use warnings;
 
 package MongoDBI::Document::Storage::Operation;
 {
-  $MongoDBI::Document::Storage::Operation::VERSION = '0.0.2';
+  $MongoDBI::Document::Storage::Operation::VERSION = '0.0.3';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.2'; # VERSION
+our $VERSION = '0.0.3'; # VERSION
 
 use Moose::Role;
 
@@ -19,6 +19,8 @@ use MongoDBI::Document::Storage::Criterion;
 use MongoDBI::Document::Child;
 use MongoDBI::Document::Relative;
 use MongoDBI::Document::GridFile;
+
+
 
 sub all {
     
@@ -37,6 +39,7 @@ sub all {
     return $search->query->all;
     
 }
+
 
 sub clone {
     
@@ -63,7 +66,7 @@ sub collapse {
     my $self = shift;
     my $data = {};
     
-    # in an attempt to achieve maxium efficiency, only collapse dirty fields
+    # in an attempt to achieve maximum efficiency, only collapse dirty fields
     while (my($field, $changes) = each(%{$self->_dirty})) {
         
         $data->{$field} = $changes->[-1]->{new_value};
@@ -193,6 +196,7 @@ sub collapse {
 
 }
 
+
 sub collection {
     
     my $class = shift;
@@ -205,6 +209,7 @@ sub collection {
     
 }
 
+
 sub connection {
     
     my $class = shift;
@@ -216,6 +221,7 @@ sub connection {
     return $class->config->_mongo_connection;
     
 }
+
 
 sub count {
     
@@ -234,6 +240,7 @@ sub count {
     return $search->query->count;
     
 }
+
 
 sub create {
     
@@ -430,6 +437,7 @@ sub expand {
     
 }
 
+
 sub find {
     
     my ($class, @where) = @_;
@@ -447,6 +455,7 @@ sub find {
     return $search->query;
     
 }
+
 
 sub find_one {
     
@@ -469,6 +478,7 @@ sub find_one {
     
 }
 
+
 sub find_or_create {
     
     my ($class, @where) = @_;
@@ -485,6 +495,7 @@ sub find_or_create {
     return $instance ? $instance : $class->create(%where) ;
     
 }
+
 
 sub find_or_new {
     
@@ -503,6 +514,7 @@ sub find_or_new {
     
 }
 
+
 sub full_name {
     
     my $self = shift;
@@ -515,6 +527,7 @@ sub full_name {
     return join ".", $connection->db_name, $collection->name;
     
 }
+
 
 sub first {
     
@@ -537,6 +550,7 @@ sub first {
     return $data ? $class->new($class->expand(%{$data})) : undef;
     
 }
+
 
 sub insert {
     
@@ -572,6 +586,7 @@ sub is_instance {
     
 }
 
+
 sub last {
     
     my ($class, @where) = @_;
@@ -594,6 +609,7 @@ sub last {
     
 }
 
+
 sub name {
     
     my $self = shift;
@@ -604,30 +620,6 @@ sub name {
     
 }
 
-sub page {
-    
-    my ($class, @args) = @_;
-    
-    my $skip  = pop @args;
-    my $limit = pop @args;
-    
-    my @where = @args;
-    
-    my %where = @where == 1 ? 
-        (_id => MongoDB::OID->new(value => $where[0])) : @where ;
-    
-    $class = ref $class if ref $class ;
-    
-    $class->connect unless $class->config->database->{connected};
-    
-    my $search = $class->search;
-       $search->where(%where) if values %where;
-       $search->limit($limit);
-       $search->skip($skip);
-       
-    return $search->query;
-    
-}
 
 sub reload {
     
@@ -654,6 +646,7 @@ sub reload {
     
 }
 
+
 sub remove {
     
     my ($self, %options) = @_;
@@ -678,6 +671,7 @@ sub remove {
     
 }
 
+
 sub save {
     
     my ($self, %options) = @_;
@@ -700,9 +694,10 @@ sub save {
     
 }
 
+
 sub search {
     
-    my ($self) = @_;
+    my ($self, @searches) = @_;
     
     my $config = $self->config;
     
@@ -710,11 +705,26 @@ sub search {
 
     $self->connect unless $config->database->{connected};
     
-    return MongoDBI::Document::Storage::Criterion->new(
+    my $criteria = MongoDBI::Document::Storage::Criterion->new(
         collection => $config->_mongo_collection
     );
     
+    if (@searches) {
+        
+        foreach my $search (@searches) {
+            
+            $search = $config->searches->{$search};
+            
+            $criteria = $search->($self);
+            
+        }
+        
+    }
+    
+    return $criteria;
+    
 }
+
 
 sub update {
     
@@ -732,10 +742,16 @@ sub update {
     
     my $collection = $self->config->_mongo_collection;
     
+    my $change = delete $options{set}; # should the doc be appended or replaced
+       
+       $change ||= 1; # yes, by default
+    
     $options{upsert}   ||= 0;
     $options{multiple} ||= 1;
     
-    $collection->update({ _id => $self->_id }, $self->collapse, {%options});
+    my $data = $change ? $self->collapse : { '$set' => $self->collapse };
+    
+    $collection->update({ _id => $self->_id }, $data, {%options});
     
     return $self;
     
@@ -753,7 +769,324 @@ MongoDBI::Document::Storage::Operation - Standard MongoDBI Document/Collection O
 
 =head1 VERSION
 
-version 0.0.2
+version 0.0.3
+
+=head1 SYNOPSIS
+
+    package main;
+
+    my $cds = CDDB::Album;
+    
+    my @cds = $cds->all; # returns all records (as hashes not instances)
+    
+    foreach my $cd (@cds) {
+        
+        my $this_cd = $cds->new(%{ $cd });
+        my $that_cd = $this_cd->clone;
+        
+        $this_cd->rating(5);
+        $that_cd->rating(1);
+        
+        $this_cd->save; # save changes to existing cd
+        $that_cd->insert; # new cd record
+        
+    }
+    
+    1;
+
+=head1 DESCRIPTION
+
+MongoDBI::Document::Storage::Operation is a role that provides
+collection-specific functionality to your MongoDBI document classes.
+
+=head1 METHODS
+
+=head2 all
+
+The all method, called on the class or instance, returns an arrayref of
+hashrefs corresponding to the documents in the document class collection which
+match the criteria specified.
+
+    my @cds = CDDB::Album->all;
+    
+    ... db.albums.find();
+    
+    my @cds = CDDB::Album->all(title => 'Thriller');
+    
+    ... db.albums.find({ "title" : "thriller" });
+    
+    # using M::D::S::Criterion query syntax
+    my @cds = CDDB::Album->all('rating$gt' => 10); 
+    
+    ... db.albums.find({ "rating" : { "$gt" : 10 } });
+
+=head2 clone
+
+The clone method, can only be called on a class instance which has been
+previously inserted thus having a valid ID, returns a cloned instance of itself
+including set attributes and configuration minus its ID.
+
+    my $cd1 = CDDB::Album->first; # get the first record as an instance
+    
+    my $cd2 = $cd1->clone;
+    
+    $cd2->insert; # insert not save, can't save without an id
+
+=head2 collection
+
+The collection method, called on a class or instance, simply returns the
+L<MongoDB::Collection> object set in the current document class configuration.
+
+    my $mongo_col = CDDB::Album->collection;
+
+=head2 connection
+
+The connection method, called on a class or instance, simply returns the
+L<MongoDB::Connection> object set in the current document class configuration.
+
+    my $mongo_con = CDDB::Album->connection;
+
+=head2 count
+
+The count method, called on a class or instance, simply returns the total number
+of documents matching the specified criteria.
+
+    my $count = CDDB::Album->count;
+    
+    ... db.albums.find().count();
+    
+    my $count = CDDB::Album->all(title => 'Thriller');
+    
+    ... db.albums.find({ "title" : "thriller" }).count();
+
+=head2 create
+
+The create method, called on a class or instance, inserts a new document into
+the database and returns the newly create class instance.
+
+    my $cd = CDDB::Album->create(title => 'Greatest HITS', released => ...);
+    
+    $cd->title('Greatest Hits');
+    
+    $cd->save;
+
+=head2 find
+
+The find method, called on a class or instance, not to be confused with the find
+method available via the L<MongoDB> driver, allows you to quickly query a
+resultset using the syntax described in L<MongoDBI::Document::Storage::Criterion>.
+
+The find method always returns a L<MongoDB::Cursor> object, it accepts a single
+argument (just the document ID, not MongoDB::OID) or key/value query syntax. If
+you would like to pass in a MongoDB::OID object to reference the document ID,
+please use the following syntax:
+
+    my $cd = CDDB::Album->find('4df7a599005ec15814000000')->next;
+    
+    my $cd = CDDB::Album->find(_id => $mongo_oid)->next;
+    
+    my $search = CDDB::Album->find(title => qr/Hits/);
+    
+    while (my $cd = $search->next) {
+        
+        ...
+        
+    }
+
+=head2 find_one
+
+The find_one method, called on a class or instance, not to be confused with the
+find_one method available via the L<MongoDB> driver, allows you to quickly query
+a resultset using the L<MongoDBI::Document::Storage::Criterion> syntax.
+
+The find_one method tries to return an instance of the current class based on
+the result of the query. The find_one method accepts a single argument
+(just the document ID, not MongoDB::OID) or key/value query syntax. If
+you would like to pass in a MongoDB::OID object to reference the document ID,
+please use the following syntax:
+
+    my $cd = CDDB::Album->find_one('4df7a599005ec15814000000');
+    
+    my $cd = CDDB::Album->find_one(_id => $mongo_oid);
+    
+    my $search = CDDB::Album->find_one(title => qr/Hits/);
+
+=head2 find_or_create
+
+The find_or_create method, called on a class or instance, attempts to find a
+single document based on the passed-in criteria, returning a class instance
+based on the returned document, if no matching documents can be found inserts a
+new document into the database and returns the newly create class instance.
+
+    my $cd = CDDB::Album->find_or_create(title => 'Greatest HITS');
+    
+    $cd->save;
+
+=head2 find_or_new
+
+The find_or_new method, called on a class or instance, attempts to find a
+single document based on the passed-in criteria, returning a class instance based
+on the returned document, if no matching documents can be found instantiates and
+returns a new class object.
+
+    my $cd = CDDB::Album->find_or_new(title => 'Greatest HITS');
+    
+    $cd->id ? $cd->save : $cd->insert;
+
+=head2 full_name
+
+The full_name method, called on a class or instance, simply returns the
+fully-qualified database collection name based on the collection and
+connection configuration.
+
+    CDDB::Album->config->set_database('test');
+    
+    my $col_name = CDDB::Album->full_name;
+    
+    print $col_name; # prints test.albums
+
+=head2 first
+
+The first method, called on a class or instance, allows you to quickly query
+a resultset using the L<MongoDBI::Document::Storage::Criterion> syntax returning
+an instance of the current class based on the first result of the query
+automatically sorted by ID in ascending order. The first method accepts key/value
+query syntax.
+
+    my $cd = CDDB::Album->first; 
+    
+    my $cd = CDDB::Album->first(title => qr/Hits/);
+
+=head2 insert
+
+The insert method, can only be called on a class instance which has NOT been
+previously inserted thus not having an ID set, collapses the dirty
+attributes/fields and inserts the instance into the defined collection returning
+itself.
+
+    my $cd1 = CDDB::Album->new(...); 
+    
+    $cd1->insert;
+
+=head2 last
+
+The last method, called on a class or instance, allows you to quickly query
+a resultset using the L<MongoDBI::Document::Storage::Criterion> syntax returning
+an instance of the current class based on the last result of the query
+automatically sorted by ID in descending order. The last method accepts key/value
+query syntax.
+
+    my $cd = CDDB::Album->last; 
+    
+    my $cd = CDDB::Album->last(title => qr/Hits/);
+
+=head2 name
+
+The name method, called on a class or instance, simply returns the name of
+the database collection based on the collection configuration.
+
+    my $col_name = CDDB::Album->name;
+    
+    print $col_name; # prints albums
+
+=head2 reload
+
+The reload method, can only be called on a class instance which has been
+previously inserted thus having an ID set, uses the ID to poll the database
+returning a new instance object based on the query result if any.
+
+This method is useful in stateless applications or applications where the
+instance may remain in-use for an inordinate amount of time allowing someone
+else the possibility to update that exact same record with information that
+differs from your own unsaved object thus having your eventual save overwrite
+their changes.
+
+    my $cd1 = CDDB::Album->first;
+    
+    ... 10 mins later ...
+    
+    # i should probably reload this object before making changes
+    
+    $cd1->reload;
+    
+    $cd1->title(...); # change it
+    
+    $cd1->save;
+
+=head2 remove
+
+The remove method, can only be called on a class instance which has been
+previously inserted thus having an ID set, uses the ID to poll the database
+for the corresponding document and removes it (both on the object and in the
+collection) returning a copy of the original before deletion.
+
+    my $cd1 = CDDB::Album->first;
+    
+    # $cd1 = $cd1->remove; if you're a stickler for convention
+    
+    $cd1->remove;
+    
+    $cd1->title(...); # completely new title
+    
+    $cd1->insert; # new document based on the deleted
+
+=head2 save
+
+The save method, can only be called on a class instance which has been
+previously inserted thus having an ID set, uses the ID to poll the database
+for the corresponding document updating the "dirty fields only" while saving it
+to the database.
+
+    my $cd1 = CDDB::Album->first;
+    
+    $cd1->save; # saves nothing
+    
+    $cd1->title(...); # completely new title
+    
+    $cd1->save; # save, updating the title only, not the entire document
+
+=head2 search
+
+The search method, called on a class or instance, simply returns a
+L<MongoDBI::Document::Storage::Criterion> object allowing you to build complex
+queries.
+
+    my $search = CDDB::Album->search;
+    
+    my $search = CDDB::Album->search->where('title$in' => ['Bad', 'Thiller']);
+    
+    # call query to return a MongoDB::Cursor object for further usage
+    
+    my $cursor = $search->query;
+    
+    while (my $document = $cursor->next) {
+        
+        ...
+        
+    }
+
+=head2 update
+
+The update method, unlike the L<MongoDB> driver update method, can only be called
+on a class instance which has been previously inserted thus having an ID set,
+uses the ID to poll the database for the corresponding document updating the
+"dirty fields only" while saving it to the database. The main difference between
+the update method and the save method is that the update method can change the
+entire structure of the document by discarding fields that haven't been set.
+
+You can safely use the save option where the update function might sound like
+the right choice, and only use the update option when needed (knowing exactly
+what it does). The following is an example:
+
+    my $cd1 = CDDB::Album->first;
+    
+    $cd1->update; # updates nothing
+    
+    $cd1->title(...); # completely new title
+    
+    $cd1->update; # update, updating the title only, not the entire document
+    
+    $cd1->update(set => 0); # update, replacing the document with title and ID
 
 =head1 AUTHOR
 

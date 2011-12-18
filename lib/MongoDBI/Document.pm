@@ -5,12 +5,12 @@ use warnings;
 
 package MongoDBI::Document;
 {
-  $MongoDBI::Document::VERSION = '0.0.2';
+  $MongoDBI::Document::VERSION = '0.0.3';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.2'; # VERSION
+our $VERSION = '0.0.3'; # VERSION
 
 use Moose ('extends');
 
@@ -35,7 +35,7 @@ MongoDBI::Document - Defines and Represents a MongoDB Collection and Document
 
 =head1 VERSION
 
-version 0.0.2
+version 0.0.3
 
 =head1 SYNOPSIS
 
@@ -50,6 +50,8 @@ version 0.0.2
     
     key 'rating', is_int, default => 1;
     
+    has 'runtime', is_any; # will not be saved to the db
+    
     embed 'tracks', class => 'CDDB::Track', type => 'multiple';
     
     has_one 'band', class => 'CDDB::Artist';
@@ -58,7 +60,7 @@ version 0.0.2
 
 =head1 DESCRIPTION
 
-MongoDBI::Document is core class used to model objects that will be persisted in
+MongoDBI::Document is thee class used to model objects that will be persisted in
 the MongoDB database. The representation of a Document in MongoDB is a BSON
 object that is very similar to a Perl hash or JSON object. Documents can be
 stored in their own collections in the database, or can be embedded in other
@@ -96,6 +98,53 @@ there are some methods with the same name their operations are different.
 The vast majority of MongoDBI::Document method take hash key/value pairs as
 opposed to hash-references, ... this convention can be a gotcha for some
 developers so do remember.
+
+Naming conventions are very important in a MongoDB database and MongoDBI
+document class. The following is merely an aid towards helping you name or
+databases, collections, fields and indexes properly.
+
+Databases should not be named "admin, local, or test". Collections and/or
+MongoDBI document class names should not be named "system".
+
+More importantly, Fields should never be named using terms that may collide or
+overwrite the functionality of existing Moose or MongoDBI reserved words or
+methods. Those terms include but are not limited to the following:
+
+    package EggNoodle;
+    
+    use MongoDBI::Document ; # +Moose
+    
+    key 'has' ;     # BAD
+    key 'can' ;     # BAD
+    key 'extends' ; # BAD
+    
+    # ... and other Moose keywords
+    
+    key 'id' ;      # BAD
+    key 'name' ;    # BAD
+    key 'key' ;     # BAD
+    key 'store' ;   # BAD
+    key 'change' ;  # BAD
+    key 'config' ;  # BAD
+    key 'file' ;    # BAD
+    
+    # ... and other MongoDBI::Document::Sugar keywords
+    
+    index 'name' ;      # BAD
+    index 'unique' ;    # BAD
+    index 'drop_dups' ; # BAD
+    index 'safe' ;      # BAD
+    index 'background' ;# BAD
+    
+    # ... and other MongoDB indexing option keys
+    
+    1;
+
+For now it is important for you to avoid using these names and others that
+might collide with some inherited functionality. As a rule, simply name things
+as specifically as possible. I apologize for any inconvenience. Please
+familiarize yourself with L<Moose>'s keywords as well as the keywords found in
+L<MongoDBI::Document::Sugar>.
 
 =head2 CONFIGURATION
 

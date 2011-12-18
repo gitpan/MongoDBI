@@ -4,7 +4,7 @@ MongoDBI - A proper ODM (Object-Document-Mapper) for MongoDB
 
 # VERSION
 
-version 0.0.2
+version 0.0.3
 
 # SYNOPSIS
 
@@ -63,6 +63,10 @@ version 0.0.2
     }
 
 # DESCRIPTION
+
+Why MongoDB?
+"MongoDB has the best features of document, key/value and relational
+databases. --that was a period"
 
 MongoDBI is an Object-Document-Mapper (ODM) for [MongoDB](http://search.cpan.org/perldoc?MongoDB). It allows you to
 create [Moose](http://search.cpan.org/perldoc?Moose)-based classes to interact with MongoDB databases. Born out of

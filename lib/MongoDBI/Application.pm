@@ -5,12 +5,12 @@ use warnings;
 
 package MongoDBI::Application;
 {
-  $MongoDBI::Application::VERSION = '0.0.2';
+  $MongoDBI::Application::VERSION = '0.0.3';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.2'; # VERSION
+our $VERSION = '0.0.3'; # VERSION
 
 use Moose ();
 use Moose::Exporter;
@@ -178,7 +178,7 @@ MongoDBI::Application - MongoDBI Application Class and Document Class Controller
 
 =head1 VERSION
 
-version 0.0.2
+version 0.0.3
 
 =head1 SYNOPSIS
 
@@ -215,6 +215,10 @@ MongoDBI::Application exports the app() method which allows you to configure
 your application having the configuration applied to all associated document
 classes. MongoDBI::Application will also load all associated classes and make
 them available through the class() method after instantiation.
+
+Modeling your database schema will involve learning how models are crafted
+using L<MongoDBI::Document>, please read that documentation towards getting
+started. Enjoy!!!
 
 =head1 EXPORTS
 

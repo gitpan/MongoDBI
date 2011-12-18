@@ -5,20 +5,28 @@ use warnings;
 
 package MongoDBI::Document::GridFile;
 {
-  $MongoDBI::Document::GridFile::VERSION = '0.0.2';
+  $MongoDBI::Document::GridFile::VERSION = '0.0.3';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.2'; # VERSION
+our $VERSION = '0.0.3'; # VERSION
 
 use Moose;
 use IO::File;
 
+
+
 has object      => ( is => 'rw', isa => 'Any' );
-has parent      => ( is => 'rw', isa => 'Str' );
-has target      => ( is => 'rw', isa => 'MongoDB::GridFS' );
+
+
+has parent      => ( is => 'rw', isa => 'Str', required => 1 );
+
+has target      => ( is => 'rw', isa => 'MongoDB::GridFS' ); # not in service :)
+
+
 has config      => ( is => 'rw', isa => 'HashRef', default => sub { {} } );
+
 
 sub add {
     
@@ -89,6 +97,7 @@ sub add {
     
 }
 
+
 sub count {
     
     my ($self) = @_;
@@ -115,6 +124,7 @@ sub count {
     return 0;
     
 }
+
 
 sub get {
     
@@ -218,6 +228,7 @@ sub integrity {
     
 }
 
+
 sub remove {
     
     my ($self, $offset, $length) = @_;
@@ -286,7 +297,159 @@ MongoDBI::Document::GridFile - A GridFS Wrapper Around MongoDBI File Documents
 
 =head1 VERSION
 
-version 0.0.2
+version 0.0.3
+
+=head1 SYNOPSIS
+
+    # create a relational/reference document relationship for CDDB::Album
+    
+    my $mp3s = MongoDBI::Document::GridFile->new(
+        parent => 'CDDB::Track',
+        config => { multiple => 1 }
+    );
+    
+    $mp3s->add($path_or_io, ...); # 1st arg can be file_path or IO::File obj
+
+=head1 DESCRIPTION
+
+MongoDBI::Document::GridFile represents a MongoDB gridfs reference document
+and is designed to be assigned to attributes in a parent document class.
+MongoDBI::Document::GridFile provides a standardized API for handling
+relationship concerns (e.g. adding, selecting, and removing related file
+documents).
+
+This relationship identification class is used automatically by the "file"
+keyword provided by L<MongoDBI::Document::Sugar>.
+
+The purpose of using this and other relationship identification/wrapper classes
+is that it provides the MongoDBI serialization/deserialization mechanisms with a
+standard API.
+
+=head1 ATTRIBUTES
+
+=head2 object
+
+The object attribute can contain an instance of a L<MongoDB::OID> (or an array
+of instances if the "multiple" configuration variable is true. You will likely
+never need to access this attribute directly because access and manipulation of
+the object(s) are made available through method calls.
+
+=head2 parent
+
+The parent attribute is required and should contain the fully-qualified class
+name of the parent document class. Once set you will likely never need to access
+this attribute directly.
+
+=head2 config
+
+The config attribute can contain a hashref of key/value arguments which control
+how method calls manipulate the class instance(s) stored in the object attribute.
+
+    # forces the object attribute to become an arrayref having instances
+    # append the object attribute
+    
+    MongoDBI::Document::GridFile->new(
+        ...,
+        config => { multiple => 1 }
+    );
+
+=head1 METHODS
+
+=head2 add
+
+The add method requires an absolute file path and optional key/value parameters
+which will be saved along-side of the gridfs document.
+
+The add method adds, replaces or appends the object attribute based on the
+configuration in the config attribute.
+
+    my $mp3s = MongoDBI::Document::GridFile->new(
+        ..., config => { multiple => 1 }
+    );
+    
+    $mp3s->add($file1, ...);
+    $mp3s->add($file2, ...);
+    $mp3s->add($file3, ...); # we've added three files
+    
+    my $mp3s = MongoDBI::Document::Relative->new(
+        ..., config => {  }
+    );
+    
+    $mp3s->add($file1, ...);
+    $mp3s->add($file2, ...); # we've replace the original file
+
+The optional arguments passed to the add method can be arbitrary and will be
+saved in the gridfs along-side the file. It is important that you understand
+that those arbitrary parameters will not be saved on the parent document.
+Querying for the file based on those arbitrary parameters must be done on the
+gridfs collection related to the parent.
+
+=head2 count
+
+The count method simply returns the number of objects existing in the object
+attribute.
+
+    my $mp3s = MongoDBI::Document::GridFile->new(
+        ..., config => { multiple => 1 }
+    );
+    
+    $mp3s->add(...);
+    $mp3s->add(...);
+    $mp3s->add(...); 
+    
+    $mp3s->count(); # we've added three files
+
+=head2 get
+
+The get method retrieves a particular object instance from the object attribute
+(store), if configured for multiple objects, it accepts an index (starting at 0)
+which will return the object instance at that position, or a starting and ending
+index which returns object instances within that range.
+
+    my $mp3s = MongoDBI::Document::GridFile->new(
+        ..., config => { multiple => 1 }
+    );
+    
+    $mp3s->add(...);
+    $mp3s->add(...);
+    $mp3s->add(...);
+    $mp3s->add(...);
+    $mp3s->add(...);
+    $mp3s->add(...);
+    $mp3s->add(...);
+    $mp3s->add(...);
+    $mp3s->add(...); 
+    
+    my $mp31 = $mp3s->get(0);
+    my @mp3s_first5 = $mp3s->get(0, 4);
+
+=head2 remove
+
+The remove method retrieves and removes a particular object instance from the
+object attribute (store), if configured for multiple objects, it accepts an
+index (starting at 0) which will delete and return the object instance at that
+position, or a starting and ending index which deletes and returns object
+instances within that range (as you would expect the native Perl splice function
+to operate).
+
+    my $mp3s = MongoDBI::Document::Relative->new(
+        ..., config => { multiple => 1 }
+    );
+    
+    $mp3s->add(...);
+    $mp3s->add(...);
+    $mp3s->add(...);
+    $mp3s->add(...);
+    $mp3s->add(...);
+    $mp3s->add(...);
+    $mp3s->add(...);
+    $mp3s->add(...);
+    $mp3s->add(...); # added 9 tracks
+    
+    my $mp31 = $mp3s->remove(0);
+    my @mp3s_next5 = $mp3s->remove(0, 4);
+    
+    print $mp3s->count; # prints 3
 
 =head1 AUTHOR
 
