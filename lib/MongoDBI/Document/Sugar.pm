@@ -5,12 +5,12 @@ use warnings;
 
 package MongoDBI::Document::Sugar;
 {
-  $MongoDBI::Document::Sugar::VERSION = '0.0.3';
+  $MongoDBI::Document::Sugar::VERSION = '0.0.4';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.3'; # VERSION
+our $VERSION = '0.0.4'; # VERSION
 
 use Moose::Role;
 
@@ -403,6 +403,32 @@ sub is_hash {
 }
 
 
+sub is_id {
+    
+    my $meta   = shift;
+    my %params = @_;
+       $params{is}  ||= 'rw';
+       $params{isa} ||= 'MongoDB::OID';
+    
+    return %params;
+    
+}
+
+
+sub is_inc {
+    
+    my $meta   = shift;
+    my %params = @_;
+       $params{is}      ||= 'rw';
+       $params{isa}     ||= 'Int';
+       $params{lazy}    ||= 1;
+       $params{default} ||= sub { shift->count + 1 };
+    
+    return %params;
+    
+}
+
+
 sub is_int {
     
     my $meta   = shift;
@@ -534,7 +560,7 @@ MongoDBI::Document::Sugar - Syntactic Sugar For Defining MongoDBI Document Class
 
 =head1 VERSION
 
-version 0.0.3
+version 0.0.4
 
 =head1 SYNOPSIS
 
@@ -870,6 +896,47 @@ The is_hash keyword is L<Moose> attribute shorthand for the following:
     # overwrite the default access attribute
     
     key 'facebook_stream', is_hash is => 'ro';
+
+=head2 is_id
+
+The is_id keyword is L<Moose> attribute shorthand for the following:
+
+    package Child;
+    
+    use MongoDBI::Document;
+    
+    key 'student_id', is_id;
+    
+    # is the equivalent of:
+    
+    key 'student_id' => (
+        is  => 'rw',
+        isa => 'MongoDB::OID'
+    );
+    
+    # overwrite the default access attribute
+    
+    key 'student_id', is_id is => 'ro', default => sub { ... };
+
+=head2 is_inc
+
+The is_inc keyword is L<Moose> attribute shorthand for the following:
+
+    package Child;
+    
+    use MongoDBI::Document;
+    
+    key 'child_id', is_inc;
+    
+    # is the equivalent of:
+    
+    key 'child' => (
+        is  => 'rw',
+        isa => 'Int',
+        default => sub {
+            ... # count documents + 1
+        }
+    );
 
 =head2 is_int
 

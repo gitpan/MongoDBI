@@ -5,14 +5,15 @@ use warnings;
 
 package MongoDBI::Document::Storage::Criterion;
 {
-  $MongoDBI::Document::Storage::Criterion::VERSION = '0.0.3';
+  $MongoDBI::Document::Storage::Criterion::VERSION = '0.0.4';
 }
 
 use Moose;
+use boolean;
 
 use 5.001000;
 
-our $VERSION = '0.0.3'; # VERSION
+our $VERSION = '0.0.4'; # VERSION
 
 
 
@@ -374,6 +375,36 @@ sub where {
     
 }
 
+
+sub where_exists {
+    
+    my ($self, @args) = @_;
+    
+    foreach my $key ( @args ) {
+        
+        $self->criteria->{where}->{$key}->{'$exists'} = boolean::true;
+        
+    }
+    
+    return $self;
+    
+}
+
+
+sub where_not_exists {
+    
+    my ($self, @args) = @_;
+    
+    foreach my $key ( @args ) {
+        
+        $self->criteria->{where}->{$key}->{'$exists'} = boolean::false;
+        
+    }
+    
+    return $self;
+    
+}
+
 1;
 __END__
 =pod
@@ -384,7 +415,7 @@ MongoDBI::Document::Storage::Criterion - MongoDBI Chainable Collection Query Bui
 
 =head1 VERSION
 
-version 0.0.3
+version 0.0.4
 
 =head1 SYNOPSIS
 
@@ -511,7 +542,7 @@ be on the provided field.
 =head2 never
 
 The never method adds a criterion that instructs the L<MongoDB::Collection>
-query method to select all columns except the ones specified. The oppisite of
+query method to select all columns except the ones specified. The opposite of
 this is the only() method, these two methods can't be used together.
 
     $search->never('password');
@@ -529,7 +560,7 @@ $nin.
 =head2 only
 
 The only method adds a criterion that instructs the L<MongoDB::Collection>
-query method to only select the specified columns. The oppisite of
+query method to only select the specified columns. The opposite of
 this is the never() method, these two methods can't be used together.
 
     $search->only('first_name', 'last_name', 'login');
@@ -579,6 +610,30 @@ The where method wraps and appends the where criterion.
     $search->where('age$lte' => 60);
     
     ... { "age" : { "$gte" : 21 }, "age" : { "$lte" : 60 } }
+
+=head2 where_exists
+
+The where_exists method adds a criterion that specifies fields that must exist
+in order to return results. The corresponding MongoDB operation is $exists.
+
+    $search->where_exists('mother.name', 'father.name');
+    
+    ... {
+        "mother.name" : { "$exists" : true },
+        "father.name" : { "$exists" : true }
+    }
+
+=head2 where_not_exists
+
+The where_not_exists method adds a criterion that specifies fields that must NOT
+exist in order to return results. The corresponding MongoDB operation is $exists.
+
+    $search->where_not_exists('mother.name', 'father.name');
+    
+    ... {
+        "mother.name" : { "$exists" : false },
+        "father.name" : { "$exists" : false }
+    }
 
 =head1 AUTHOR
 

@@ -2,7 +2,7 @@ NAME
     MongoDBI - A proper ODM (Object-Document-Mapper) for MongoDB
 
 VERSION
-    version 0.0.3
+    version 0.0.4
 
 SYNOPSIS
         package CDDB;
@@ -19,7 +19,7 @@ SYNOPSIS
         
         # load child doc classes
             classes => {
-                self => 1 # loads CDDB::*
+                self => 1, # loads CDDB::*
                 load => ['Other::Namspace']
             }
         
