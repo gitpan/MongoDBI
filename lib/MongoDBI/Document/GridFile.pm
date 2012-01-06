@@ -5,12 +5,12 @@ use warnings;
 
 package MongoDBI::Document::GridFile;
 {
-  $MongoDBI::Document::GridFile::VERSION = '0.0.4';
+  $MongoDBI::Document::GridFile::VERSION = '0.0.5';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.4'; # VERSION
+our $VERSION = '0.0.5'; # VERSION
 
 use Moose;
 use IO::File;
@@ -297,7 +297,7 @@ MongoDBI::Document::GridFile - A GridFS Wrapper Around MongoDBI File Documents
 
 =head1 VERSION
 
-version 0.0.4
+version 0.0.5
 
 =head1 SYNOPSIS
 

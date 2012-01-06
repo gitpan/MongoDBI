@@ -5,12 +5,12 @@ use warnings;
 
 package MongoDBI::Document::Storage::Operation;
 {
-  $MongoDBI::Document::Storage::Operation::VERSION = '0.0.4';
+  $MongoDBI::Document::Storage::Operation::VERSION = '0.0.5';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.4'; # VERSION
+our $VERSION = '0.0.5'; # VERSION
 
 use Moose::Role;
 
@@ -43,7 +43,7 @@ sub all {
 
 sub clone {
     
-    my ($self, %options) = @_;
+    my ($self) = @_;
     
     $self->is_instance('clone');
     
@@ -554,7 +554,7 @@ sub first {
 
 sub insert {
     
-    my ($self, %options) = @_;
+    my ($self) = @_;
     
     $self->is_instance('insert');
     
@@ -565,7 +565,7 @@ sub insert {
     
     my $collection = $self->config->_mongo_collection;
     
-    $self->_id($collection->insert($self->collapse, %options));
+    $self->_id($collection->insert($self->collapse, $self->config->options));
     
     return $self;
     
@@ -649,7 +649,7 @@ sub reload {
 
 sub remove {
     
-    my ($self, %options) = @_;
+    my ($self) = @_;
     
     $self->is_instance('remove');
     
@@ -660,7 +660,7 @@ sub remove {
     
     my $collection = $self->config->_mongo_collection;
     
-    $collection->remove({ _id => $self->_id }, %options) ;
+    $collection->remove({ _id => $self->_id }, $self->config->options) ;
     
     # no longer assoc to a record
     $self->_id->{value} = 0;
@@ -674,7 +674,7 @@ sub remove {
 
 sub save {
     
-    my ($self, %options) = @_;
+    my ($self) = @_;
     
     $self->is_instance('save');
     
@@ -688,7 +688,7 @@ sub save {
     
     my $collection = $self->config->_mongo_collection;
     
-    $collection->save($self->collapse, %options);
+    $collection->save($self->collapse, $self->config->options);
     
     return $self;
     
@@ -711,11 +711,19 @@ sub search {
     
     if (@searches) {
         
-        foreach my $search (@searches) {
+        while (my $key = shift @searches) {
             
-            $search = $config->searches->{$search};
+            my @args = ();
             
-            $criteria = $search->($self);
+            while (@searches && !$config->searches->{$searches[0]}) {
+                
+                push @args, shift @searches;
+                
+            }
+            
+            my $search = $config->searches->{$key};
+            
+            $criteria = $search->($criteria, $self, @args);
             
         }
         
@@ -751,7 +759,7 @@ sub update {
     
     my $data = $change ? $self->collapse : { '$set' => $self->collapse };
     
-    $collection->update({ _id => $self->_id }, $data, {%options});
+    $collection->update({ _id => $self->_id }, $data, $self->config->options);
     
     return $self;
     
@@ -769,7 +777,7 @@ MongoDBI::Document::Storage::Operation - Standard MongoDBI Document/Collection O
 
 =head1 VERSION
 
-version 0.0.4
+version 0.0.5
 
 =head1 SYNOPSIS
 
@@ -1056,6 +1064,39 @@ queries.
     my $search = CDDB::Album->search->where('title$in' => ['Bad', 'Thiller']);
     
     # call query to return a MongoDB::Cursor object for further usage
+    
+    my $cursor = $search->query;
+    
+    while (my $document = $cursor->next) {
+        
+        ...
+        
+    }
+
+The search method also supports another syntax for chaining stored
+queries/filters.
+
+    package CDDB::Album;
+    
+    use MongoDBI::Document;
+    
+    filter 'filter_a' => sub {
+        my ($filter, $self, @args) = @_;
+        $filter->and_where(...)
+    };
+    
+    filter 'filter_b' => sub {
+        my ($filter, $self, @args) = @_;
+        $filter->and_where(...)
+    };
+    
+    package main;
+
+    my $search = CDDB::Album->search('filter_a', 'filter_b');
+    
+    # experimental syntax (pass args to filters)
+    # my $search = CDDB::Album->search('filter_a', 'filter_b' => (1..9));
+    # my $search = CDDB::Album->search('filter_a' => (1..9), 'filter_b');
     
     my $cursor = $search->query;
     

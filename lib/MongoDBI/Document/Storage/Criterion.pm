@@ -5,7 +5,7 @@ use warnings;
 
 package MongoDBI::Document::Storage::Criterion;
 {
-  $MongoDBI::Document::Storage::Criterion::VERSION = '0.0.4';
+  $MongoDBI::Document::Storage::Criterion::VERSION = '0.0.5';
 }
 
 use Moose;
@@ -13,7 +13,7 @@ use boolean;
 
 use 5.001000;
 
-our $VERSION = '0.0.4'; # VERSION
+our $VERSION = '0.0.5'; # VERSION
 
 
 
@@ -141,18 +141,12 @@ sub any_in {
 
 sub any_of {
     
-    my ($self, @values) = @_;
+    my ($self, $key, @values) = @_;
     
-    my %values = ();
-    
-    push @{$values{$_}}, $_ for @values;
-    
-    foreach my $key ( keys %values ) {
+    foreach my $value ( @values ) {
         
-        my $value = $values{$key};
-        
-        push @{$self->criteria->{where}->{$key}->{'$or'}},
-            "ARRAY" eq ref $value? @{$value} : $value;
+        push @{$self->criteria->{where}->{'$or'}}, "ARRAY" eq ref $value?
+            map {{ $key => $_ }} @{$value} : { $key => $value };
         
     }
     
@@ -415,7 +409,7 @@ MongoDBI::Document::Storage::Criterion - MongoDBI Chainable Collection Query Bui
 
 =head1 VERSION
 
-version 0.0.4
+version 0.0.5
 
 =head1 SYNOPSIS
 
@@ -464,7 +458,7 @@ The criteria attribute is a hashref which represents the current query.
 The all_in method adds a criterion that specifies values that must all match
 in order to return results. The corresponding MongoDB operation is $all.
 
-    $search->all_in(aliases => ['007', 'Bond']);
+    $search->all_in(aliases => '007', 'Bond');
     
     ... { "aliases" : { "$all" : ['007', 'Bond'] } }
 
@@ -491,7 +485,7 @@ The and_where method wraps and appends the where criterion.
 The any_in method adds a criterion that specifies values where any value can
 match in order to return results. The corresponding MongoDB operation is $in.
 
-    $search->any_in(aliases => ['007', 'Bond']);
+    $search->any_in(aliases => '007', 'Bond');
     
     ... { "aliases" : { "$in" : ['007', 'Bond'] } }
 
@@ -500,13 +494,9 @@ match in order to return results. The corresponding MongoDB operation is $in.
 The any_of method adds a criterion that specifies a set of expressions that any
 can match in order to return results. The underlying MongoDB expression is $or.
 
-    $search->any_of(last_name => 'Penn', last_name => 'Teller');
+    $search->any_of(last_name => 'Penn', 'Teller');
     
-    ... {
-            "last_name" : {
-                "$or" : [{ "last_name" : "Penn" }, { "last_name" : "Teller" }]
-            }
-        }
+    ... { "$or" : [{ "last_name" : "Penn" }, { "last_name" : "Teller" }] }
 
 =head2 asc_sort
 

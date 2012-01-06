@@ -5,12 +5,12 @@ use warnings;
 
 package MongoDBI::Document::Storage;
 {
-  $MongoDBI::Document::Storage::VERSION = '0.0.4';
+  $MongoDBI::Document::Storage::VERSION = '0.0.5';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.4'; # VERSION
+our $VERSION = '0.0.5'; # VERSION
 
 use Moose::Role; # is trait
 
@@ -85,7 +85,7 @@ MongoDBI::Document::Storage - MongoDBI Document Storage Interface
 
 =head1 VERSION
 
-version 0.0.4
+version 0.0.5
 
 =head1 SYNOPSIS
 

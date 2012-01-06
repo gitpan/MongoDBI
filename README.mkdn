@@ -4,7 +4,7 @@ MongoDBI - A proper ODM (Object-Document-Mapper) for MongoDB
 
 # VERSION
 
-version 0.0.4
+version 0.0.5
 
 # SYNOPSIS
 

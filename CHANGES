@@ -1,18 +1,18 @@
 This file documents the revision history for the Perl library MongoDBI.
 
--       add the ability to raise/print errors much like DBI.pm's API, and also
-        allow this configuration to be specified on the app controller thus
-        auto-configuring all associated classes
-
 -       figure out a means to prevent reserved word, database keyword and schema
         attribute naming collisions
         
 -       database connection pooling with the ability to read and write to
         different connections
         
--       enable safe_mode by default with the option to turn it off
-
 -       process indexing so that order is preserved
+
+0.0.5   2012-01-05
+
+x       enable safe_mode by default with the option to turn it off
+
+x       redesigned testing method of operation has 100% test coverage of querying
 
 0.0.4   2011-12-19
 

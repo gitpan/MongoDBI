@@ -20,7 +20,9 @@ lib/MongoDBI/Document/Sugar.pm
 t/00-load-classes.t
 t/00-load-roles.t
 t/01-cddb-application.t
-t/02-zips-standalone.t
+t/90-zips-startup.t
+t/91-zips-querying.t
+t/99-zips-killall.t
 t/assets/zips.json
 t/lib/CDDB.pm
 t/lib/CDDB/Album.pm

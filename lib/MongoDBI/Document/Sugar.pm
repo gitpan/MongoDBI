@@ -5,12 +5,12 @@ use warnings;
 
 package MongoDBI::Document::Sugar;
 {
-  $MongoDBI::Document::Sugar::VERSION = '0.0.4';
+  $MongoDBI::Document::Sugar::VERSION = '0.0.5';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.4'; # VERSION
+our $VERSION = '0.0.5'; # VERSION
 
 use Moose::Role;
 
@@ -177,8 +177,7 @@ sub filter {
     
     # register a search method that returns a stored criterion
     $config->searches->{$name} = sub {
-        my $self = shift ;
-        return $code->($self->search);
+        return $code->(@_);
     };
     
     return $meta;
@@ -560,7 +559,7 @@ MongoDBI::Document::Sugar - Syntactic Sugar For Defining MongoDBI Document Class
 
 =head1 VERSION
 
-version 0.0.4
+version 0.0.5
 
 =head1 SYNOPSIS
 
@@ -708,6 +707,11 @@ with L<MongoDBI::Document::Storage::Criterion> for more information on querying.
     
     filter 'is_under_age' => sub {
         shift->where('age$lt' => 21);
+    };
+    
+    filter 'is_something_special' => sub {
+        my ($filter, $self, @args) = @_;
+        ...
     };
     
     package main;
