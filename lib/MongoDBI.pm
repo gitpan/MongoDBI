@@ -5,12 +5,12 @@ use warnings;
 
 package MongoDBI;
 {
-  $MongoDBI::VERSION = '0.0.5';
+  $MongoDBI::VERSION = '0.0.6';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.5'; # VERSION
+our $VERSION = '0.0.6'; # VERSION
 
 use Moose ('extends');
 
@@ -27,7 +27,7 @@ MongoDBI - A proper ODM (Object-Document-Mapper) for MongoDB
 
 =head1 VERSION
 
-version 0.0.5
+version 0.0.6
 
 =head1 SYNOPSIS
 
@@ -46,7 +46,7 @@ version 0.0.5
         # load child doc classes
         classes => {
             self => 1, # loads CDDB::*
-            load => ['Other::Namspace']
+            load => ['Other::Namespace']
         }
     
     };
@@ -76,18 +76,18 @@ version 0.0.5
 
 Why MongoDB?
 "MongoDB has the best features of document, key/value and relational
-databases. --that was a period"
+databases."
 
 MongoDBI is an Object-Document-Mapper (ODM) for L<MongoDB>. It allows you to
 create L<Moose>-based classes to interact with MongoDB databases. Born out of
-the frustration from waiting for someone else to create a proper MongoDB access
-layer, I decided to bite-the-bullet and try my hand at it.
+the frustration of waiting for someone else to create a proper MongoDB modeling
+framework, I decided to bite-the-bullet and try my hand at it.
 
 At-a-glance, most will enjoy MongoDBI for its ability to easily model classes
-while leveraging the power of MongoDB's schemaless and expeditios document-based
+while leveraging the power of MongoDB's schemaless and expeditious document-based
 design, dynamic queries, and atomic modifier operations.
 
-Also noteworthy is MongoDBI's ease-of-use, chainable search facilities,
+Also noteworthy is MongoDBI's ease-of-use, chainable search facilities (filters),
 automated indexing, moose-integration (inheritance support, etc), lean
 document updates via dirty field tracking, and ability for each class to be
 configured to use a different database and connection, etc.

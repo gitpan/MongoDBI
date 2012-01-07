@@ -5,12 +5,12 @@ use warnings;
 
 package MongoDBI::Document::Storage::Operation;
 {
-  $MongoDBI::Document::Storage::Operation::VERSION = '0.0.5';
+  $MongoDBI::Document::Storage::Operation::VERSION = '0.0.6';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.5'; # VERSION
+our $VERSION = '0.0.6'; # VERSION
 
 use Moose::Role;
 
@@ -621,6 +621,19 @@ sub name {
 }
 
 
+sub query {
+    
+    my ($self, @filters) = @_;
+    
+    my $config = $self->config;
+    
+    confess("config attribute not present") unless blessed($config);
+
+    return $self->search(@filters)->query;
+    
+}
+
+
 sub reload {
     
     my ($self) = @_;
@@ -777,7 +790,7 @@ MongoDBI::Document::Storage::Operation - Standard MongoDBI Document/Collection O
 
 =head1 VERSION
 
-version 0.0.5
+version 0.0.6
 
 =head1 SYNOPSIS
 
@@ -996,6 +1009,41 @@ the database collection based on the collection configuration.
     my $col_name = CDDB::Album->name;
     
     print $col_name; # prints albums
+
+=head2 query
+
+The query method, called on a class or instance, is shorthand (an alias) for
+calling the search method and eventually calling the query method within
+L<MongoDBI::Document::Storage::Criterion> package executing pre-defined filters
+and returning the resulting L<MongoDB::Cursor> object.
+
+    package CDDB::Album;
+    
+    use MongoDBI::Document;
+    
+    filter 'w_quantity' => sub {
+        my ($filter, $self, $cond, $value) = @_;
+        $filter->and_where("quantity$cond" => $value);
+    };
+    
+    package main;
+
+    # note: any arg not recognized as an pre-defined filter is passed to the
+    # filter preceding it
+    
+    my $cursor = CDDB::Album->query('w_quantity', '$gte', 1000);
+    
+    # is the equivalent of ...
+    
+    my $search = CDDB::Album->search->where('w_quantity', '$gte', 1000);
+    
+    my $cursor = $search->query;
+    
+    while (my $document = $cursor->next) {
+        
+        ...
+        
+    }
 
 =head2 reload
 

@@ -5,12 +5,12 @@ use warnings;
 
 package MongoDBI::Document::Config;
 {
-  $MongoDBI::Document::Config::VERSION = '0.0.5';
+  $MongoDBI::Document::Config::VERSION = '0.0.6';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.5'; # VERSION
+our $VERSION = '0.0.6'; # VERSION
 
 use Moose::Role; # is trait (++ :)
 
@@ -141,7 +141,7 @@ MongoDBI::Document::Config - Configuration for a MongoDBI Document Class
 
 =head1 VERSION
 
-version 0.0.5
+version 0.0.6
 
 =head1 SYNOPSIS
 
@@ -152,8 +152,7 @@ version 0.0.5
     $cds->config->set_collection('some_classes');
     $cds->config->set_database('test');
     
-    # set raise and print errors like in DBI
-    $cds->config->set_options(safe => 1);
+    $cds->config->options->{safe} = 0; # on error, continue
     
     1;
 

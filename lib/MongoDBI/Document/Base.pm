@@ -5,12 +5,12 @@ use warnings;
 
 package MongoDBI::Document::Base;
 {
-  $MongoDBI::Document::Base::VERSION = '0.0.5';
+  $MongoDBI::Document::Base::VERSION = '0.0.6';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.5'; # VERSION
+our $VERSION = '0.0.6'; # VERSION
 
 use Moose ('with');
 use Moose::Exporter;

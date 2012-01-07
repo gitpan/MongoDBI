@@ -84,35 +84,35 @@ ok do {
 # let the chaining/searching begin ...
 
 ok do {
-    my $search = $zips->search('in_maryland_area')->query;
+    my $search = $zips->query('in_maryland_area');
     $search->count == 421
 },  'found 421 cities in maryland';
 
 ok do {
-    my $search = $zips->search('in_tristate_area')->query;
+    my $search = $zips->query('in_tristate_area');
     $search->count == 2051
 },  'found 2,051 cities in the tri-state area';
 
 ok do {
-    my $search = $zips->search('in_tristate_area', 'in_maryland_area')->query;
+    my $search = $zips->query('in_tristate_area', 'in_maryland_area');
     $search->count == 2472
 },  'found 2,472 cities in the tri-state +maryland area';
 
 ok do {
     my @where  = ('in_tristate_area', 'has_population' => 3000);
-    my $search = $zips->search(@where)->query;
+    my $search = $zips->query(@where);
     $search->count == 1270
 },  'found 1,270 cities in the tri-state with over 3000 residents';
 
 ok do {
     my @where  = ('in_tristate_area', 'has_population' => 2000);
-    my $search = $zips->search(@where)->query;
+    my $search = $zips->query(@where);
     $search->count == 1490
 },  'found 1,490 cities in the tri-state with over 2000 residents';
 
 ok do {
     my @where  = ('in_tristate_area', 'has_population');
-    my $search = $zips->search(@where)->query;
+    my $search = $zips->query(@where);
     $search->count == 2049
 },  'found 2,049 cities in the tri-state with more than 1 residents';
 
