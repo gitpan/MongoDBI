@@ -5,12 +5,12 @@ use warnings;
 
 package MongoDBI::Application;
 {
-  $MongoDBI::Application::VERSION = '0.0.6';
+  $MongoDBI::Application::VERSION = '0.0.7';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.6'; # VERSION
+our $VERSION = '0.0.7'; # VERSION
 
 use Moose ();
 use Moose::Exporter;
@@ -107,7 +107,7 @@ sub app {
             my $class_file = $class_name;
                $class_file =~ s/::/\//g;
             
-            eval "require $class_name" unless $INC{"$class_file.pm"};
+            eval { require $class_name } unless $INC{"$class_file.pm"};
             push @class_list, useall($class_name);
             
         }
@@ -178,7 +178,7 @@ MongoDBI::Application - MongoDBI Application Class and Document Class Controller
 
 =head1 VERSION
 
-version 0.0.6
+version 0.0.7
 
 =head1 SYNOPSIS
 

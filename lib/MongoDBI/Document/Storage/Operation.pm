@@ -5,12 +5,12 @@ use warnings;
 
 package MongoDBI::Document::Storage::Operation;
 {
-  $MongoDBI::Document::Storage::Operation::VERSION = '0.0.6';
+  $MongoDBI::Document::Storage::Operation::VERSION = '0.0.7';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.6'; # VERSION
+our $VERSION = '0.0.7'; # VERSION
 
 use Moose::Role;
 
@@ -790,7 +790,7 @@ MongoDBI::Document::Storage::Operation - Standard MongoDBI Document/Collection O
 
 =head1 VERSION
 
-version 0.0.6
+version 0.0.7
 
 =head1 SYNOPSIS
 

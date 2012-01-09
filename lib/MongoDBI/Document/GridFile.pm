@@ -5,12 +5,12 @@ use warnings;
 
 package MongoDBI::Document::GridFile;
 {
-  $MongoDBI::Document::GridFile::VERSION = '0.0.6';
+  $MongoDBI::Document::GridFile::VERSION = '0.0.7';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.6'; # VERSION
+our $VERSION = '0.0.7'; # VERSION
 
 use Moose;
 use IO::File;
@@ -32,7 +32,7 @@ sub add {
     
     my ($self, @args) = @_;
     
-    return undef unless @args;
+    return unless @args;
     
     my $gridfs = $self->target;
     
@@ -140,7 +140,7 @@ sub get {
         
     }
     
-    return undef unless "ARRAY" eq ref $self->object;
+    return unless "ARRAY" eq ref $self->object;
     
     # return selected objects
     if ($self->config->{type} eq 'multiple') {
@@ -250,7 +250,7 @@ sub remove {
         
     }
     
-    return undef unless "ARRAY" eq ref $self->object;
+    return unless "ARRAY" eq ref $self->object;
     
     # return selected objects
     if ($self->config->{type} eq 'multiple') {
@@ -297,7 +297,7 @@ MongoDBI::Document::GridFile - A GridFS Wrapper Around MongoDBI File Documents
 
 =head1 VERSION
 
-version 0.0.6
+version 0.0.7
 
 =head1 SYNOPSIS
 

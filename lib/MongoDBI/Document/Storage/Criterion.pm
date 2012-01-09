@@ -5,7 +5,7 @@ use warnings;
 
 package MongoDBI::Document::Storage::Criterion;
 {
-  $MongoDBI::Document::Storage::Criterion::VERSION = '0.0.6';
+  $MongoDBI::Document::Storage::Criterion::VERSION = '0.0.7';
 }
 
 use Moose;
@@ -13,7 +13,7 @@ use boolean;
 
 use 5.001000;
 
-our $VERSION = '0.0.6'; # VERSION
+our $VERSION = '0.0.7'; # VERSION
 
 
 
@@ -409,7 +409,7 @@ MongoDBI::Document::Storage::Criterion - MongoDBI Chainable Collection Query Bui
 
 =head1 VERSION
 
-version 0.0.6
+version 0.0.7
 
 =head1 SYNOPSIS
 

@@ -8,6 +8,10 @@ This file documents the revision history for the Perl library MongoDBI.
         
 -       process indexing so that order is preserved
 
+0.0.7   2012-01-08
+
+x       fixed various uglies reported by PerlCritic
+
 0.0.6   2012-01-06
 
 x       added the query method to M::D::S::Operation (shorthand for $class->search(...)->query)

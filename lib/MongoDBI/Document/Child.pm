@@ -5,12 +5,12 @@ use warnings;
 
 package MongoDBI::Document::Child;
 {
-  $MongoDBI::Document::Child::VERSION = '0.0.6';
+  $MongoDBI::Document::Child::VERSION = '0.0.7';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.6'; # VERSION
+our $VERSION = '0.0.7'; # VERSION
 
 use Moose;
 
@@ -32,7 +32,7 @@ sub add {
     
     my ($self, @args) = @_;
     
-    return undef unless @args;
+    return unless @args;
     
     my $class = $self->target;
     
@@ -122,7 +122,7 @@ sub get {
         
     }
     
-    return undef unless "ARRAY" eq ref $self->object;
+    return unless "ARRAY" eq ref $self->object;
     
     # return selected objects
     if ($self->config->{type} eq 'multiple') {
@@ -162,7 +162,7 @@ sub remove {
         
     }
     
-    return undef unless "ARRAY" eq ref $self->object;
+    return unless "ARRAY" eq ref $self->object;
     
     # return selected objects
     if ($self->config->{type} eq 'multiple') {
@@ -200,7 +200,7 @@ MongoDBI::Document::Child - A Relationship Wrapper Around MongoDBI Embedded Docu
 
 =head1 VERSION
 
-version 0.0.6
+version 0.0.7
 
 =head1 SYNOPSIS
 

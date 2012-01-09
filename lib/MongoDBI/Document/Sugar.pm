@@ -5,12 +5,12 @@ use warnings;
 
 package MongoDBI::Document::Sugar;
 {
-  $MongoDBI::Document::Sugar::VERSION = '0.0.6';
+  $MongoDBI::Document::Sugar::VERSION = '0.0.7';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.6'; # VERSION
+our $VERSION = '0.0.7'; # VERSION
 
 use Moose::Role;
 
@@ -85,7 +85,7 @@ sub embed {
     
     confess("config attribute not present") unless blessed($config);
 
-    return undef unless ($name);
+    return unless ($name);
     
     $args{type} ||= 'single';
     
@@ -98,7 +98,7 @@ sub embed {
     
     # lazy load class
     my $class_file = $args{class}; $class_file =~ s/::/\//g;
-    eval "require $args{class}" unless $INC{"$class_file.pm"};
+    eval { require $args{class} } unless $INC{"$class_file.pm"};
     
     my $relative = $meta->add_attribute(
             $name,
@@ -129,7 +129,7 @@ sub file {
     
     confess("config attribute not present") unless blessed($config);
 
-    return undef unless ($name);
+    return unless ($name);
     
     $args{type} ||= 'single';
     
@@ -236,7 +236,7 @@ sub has_many {
     
     confess("config attribute not present") unless blessed($config);
 
-    return undef unless ($name);
+    return unless ($name);
     
     $args{type} = 'multiple';
     
@@ -249,7 +249,7 @@ sub has_many {
     
     # lazy load class
     my $class_file = $args{class}; $class_file =~ s/::/\//g;
-    eval "require $args{class}" unless $INC{"$class_file.pm"};
+    eval { require $args{class} } unless $INC{"$class_file.pm"};
     
     my $relative = $meta->add_attribute(
             $name,
@@ -284,7 +284,7 @@ sub has_one {
     
     confess("config attribute not present") unless blessed($config);
 
-    return undef unless ($name);
+    return unless ($name);
     
     $args{type} = 'single';
     
@@ -297,7 +297,7 @@ sub has_one {
     
     # lazy load class
     my $class_file = $args{class}; $class_file =~ s/::/\//g;
-    eval "require $args{class}" unless $INC{"$class_file.pm"};
+    eval { require $args{class} } unless $INC{"$class_file.pm"};
     
     my $relative = $meta->add_attribute(
             $name,
@@ -498,7 +498,7 @@ sub key {
     
     confess("config attribute not present") unless blessed($config);
 
-    return undef unless ($name);
+    return unless ($name);
     
     my $fields = $config->fields;
        $fields->{$name} = { %data };
@@ -559,7 +559,7 @@ MongoDBI::Document::Sugar - Syntactic Sugar For Defining MongoDBI Document Class
 
 =head1 VERSION
 
-version 0.0.6
+version 0.0.7
 
 =head1 SYNOPSIS
 

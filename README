@@ -2,7 +2,7 @@ NAME
     MongoDBI - A proper ODM (Object-Document-Mapper) for MongoDB
 
 VERSION
-    version 0.0.6
+    version 0.0.7
 
 SYNOPSIS
         package CDDB;
