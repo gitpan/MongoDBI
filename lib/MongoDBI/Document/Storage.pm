@@ -5,12 +5,12 @@ use warnings;
 
 package MongoDBI::Document::Storage;
 {
-  $MongoDBI::Document::Storage::VERSION = '0.0.7';
+  $MongoDBI::Document::Storage::VERSION = '0.0.8';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.7'; # VERSION
+our $VERSION = '0.0.8'; # VERSION
 
 use Moose::Role; # is trait
 
@@ -23,6 +23,8 @@ sub connect {
     my ($self, %args) = @_;
     
     my $cfg = $self->config;
+    
+    return $self if $cfg->database->{connected}; # already connected
     
     # ensure a database and collection are set
     $cfg->set_database unless values %{$cfg->database};
@@ -85,7 +87,7 @@ MongoDBI::Document::Storage - MongoDBI Document Storage Interface
 
 =head1 VERSION
 
-version 0.0.7
+version 0.0.8
 
 =head1 SYNOPSIS
 

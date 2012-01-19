@@ -5,12 +5,12 @@ use warnings;
 
 package MongoDBI::Document::Storage::Operation;
 {
-  $MongoDBI::Document::Storage::Operation::VERSION = '0.0.7';
+  $MongoDBI::Document::Storage::Operation::VERSION = '0.0.8';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.7'; # VERSION
+our $VERSION = '0.0.8'; # VERSION
 
 use Moose::Role;
 
@@ -253,6 +253,62 @@ sub create {
     $new->insert;
     
     return $new;
+    
+}
+
+
+sub execute_on {
+    
+    my $self = shift;
+    my $code = pop;
+    
+    my %args = ();
+    
+    my $db   = $self->config->database;
+    
+    if (@_ == 1 && lc($_[0]) eq 'slave' || lc($_[0]) eq 'master') {
+        
+        if (lc($_[0]) eq 'master') {
+        
+            %args = $db->{master} ?
+                %{$db->{master}} : %{$db} ;
+            
+        }
+        
+        if (lc($_[0]) eq 'slave') {
+            
+            %args = $db->{slaves} ?
+                @{$db->{slaves}}[rand(@{$db->{slaves}})] : %{$db} ;
+            
+        }
+        
+    }
+    else {
+        
+        %args = @_ >= 1 ? (host => $_[0]) : @_;
+        
+    }
+    
+    die "execute_on requires a FQDN or Server IP address to connect to"
+        unless $args{host};
+        
+    die "execute_on requires a CODEREF to be executed against the target server"
+        unless "CODE" eq ref $code;
+    
+    return $code->($self) # return immediately
+        if lc($args{host}) eq 'localhost' || $args{host} eq '127.0.0.1';
+    
+    my $orig_host = $self->config->database;
+    
+    $self->config->set_database(%args);
+    $self->config->database->{connected} = 0; 
+    
+    my $result = $code->($self);
+    
+    $self->config->set_database(%{$orig_host});
+    $self->config->database->{connected} = 0; # connect
+    
+    return $result;
     
 }
 
@@ -790,7 +846,7 @@ MongoDBI::Document::Storage::Operation - Standard MongoDBI Document/Collection O
 
 =head1 VERSION
 
-version 0.0.7
+version 0.0.8
 
 =head1 SYNOPSIS
 
@@ -890,6 +946,65 @@ the database and returns the newly create class instance.
     $cd->title('Greatest Hits');
     
     $cd->save;
+
+=head2 execute_on
+
+The execute_on method, called on a class or instance, is designed to allow
+the execution of specific database commands against alternate database servers.
+While it was certainly the goal for this method to be instrumental in providing
+support for MongoDB clustered environments (master/slave, replicasets, etc),
+this method has many applications.
+
+    my $cds = CDDB::Album;
+    
+    my @cds = $cds->all; # returns all records (from 127.0.0.1, default)
+    
+    $cds->execute_on('192.168.1.101' => sub {
+    
+        foreach my $cd (@cds) {
+            
+            # save changes to cd on the master server
+            $cd->rating(5);
+            $cd->save; 
+            
+        }
+    
+    });
+    
+    # or ...
+    
+    $cds->execute_on(name => 'alt_dbname', host => '192.168.1.101', sub {
+    
+        foreach my $cd (@cds) {
+            
+            # save changes to cd on the master server
+            $cd->rating(5);
+            $cd->save; 
+            
+        }
+    
+    });
+    
+    # or ...
+    # if using MongoDBI::Application with connection pooling
+    
+    my @cds = $cds->execute_on('slave' => sub {
+    
+        return shift->all
+    
+    });
+    
+    $cds->execute_on('master' => sub {
+    
+        foreach my $cd (@cds) {
+            
+            # save changes to cd on the master server
+            $cd->rating(5);
+            $cd->save; 
+            
+        }
+    
+    });
 
 =head2 find
 
@@ -1109,7 +1224,7 @@ queries.
 
     my $search = CDDB::Album->search;
     
-    my $search = CDDB::Album->search->where('title$in' => ['Bad', 'Thiller']);
+    my $search = CDDB::Album->search->where('title$in' => ['Bad', 'Thriller']);
     
     # call query to return a MongoDB::Cursor object for further usage
     
@@ -1129,7 +1244,8 @@ queries/filters.
     use MongoDBI::Document;
     
     filter 'filter_a' => sub {
-        my ($filter, $self, @args) = @_;
+        my ($filter, $self, @
+        ) = @_;
         $filter->and_where(...)
     };
     

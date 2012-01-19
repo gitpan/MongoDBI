@@ -5,12 +5,12 @@ use warnings;
 
 package MongoDBI::Document::Config;
 {
-  $MongoDBI::Document::Config::VERSION = '0.0.7';
+  $MongoDBI::Document::Config::VERSION = '0.0.8';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.7'; # VERSION
+our $VERSION = '0.0.8'; # VERSION
 
 use Moose::Role; # is trait (++ :)
 
@@ -123,6 +123,7 @@ sub set_database {
     my %args = @args == 1 ? (name => $args[0]) : @args;
     
     $args{name} ||= $self->database->{name};
+    $args{host} ||= '127.0.0.1';
     
     die "Please specify the name of the database" unless $args{name};
     
@@ -141,7 +142,7 @@ MongoDBI::Document::Config - Configuration for a MongoDBI Document Class
 
 =head1 VERSION
 
-version 0.0.7
+version 0.0.8
 
 =head1 SYNOPSIS
 

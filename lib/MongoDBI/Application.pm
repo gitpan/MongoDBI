@@ -5,12 +5,12 @@ use warnings;
 
 package MongoDBI::Application;
 {
-  $MongoDBI::Application::VERSION = '0.0.7';
+  $MongoDBI::Application::VERSION = '0.0.8';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.7'; # VERSION
+our $VERSION = '0.0.8'; # VERSION
 
 use Moose ();
 use Moose::Exporter;
@@ -132,7 +132,11 @@ sub app {
         # configure child classes with shared config
         if ($config->{connection}) {
             
-            my %db_config = %{$args->{database}};
+            my %db_config = %{$args->{database}||$args->{master}};
+               
+               # for clusters
+               $db_config{master} = $args->{master} if $args->{master};
+               $db_config{slaves} = $args->{slaves} if $args->{slaves};
             
             $db_config{name} = delete $db_config{db_name}
                 if $db_config{db_name};
@@ -178,7 +182,7 @@ MongoDBI::Application - MongoDBI Application Class and Document Class Controller
 
 =head1 VERSION
 
-version 0.0.7
+version 0.0.8
 
 =head1 SYNOPSIS
 
@@ -230,6 +234,7 @@ that each class may use a different database connection for greater flexibility,
 however there are times when you will want/need all of your application's
 document classes to share a single database connection and MongoDBI::Application
 allows you to do that. MongoDBI::Application can also preload specified classes.
+MongoDBI::Application also handling connection pooling seamlessly.
 
 The following examples are recognized parameters the app() method uses to
 configure your application.
@@ -250,12 +255,32 @@ configure your application.
     app {
         
         classes => {
-            self => 1, # loads all classes under the current namespace
+            self => 1, # cascade, loads all classes under the current namespace
             load => [
-                'Other::Classes',
-                'More::Classes',
+                'Other::Classes', # does not cascade
+                'More::Classes', # does not cascade
             ]
         }
+        
+    };
+    
+    # connection pooling, clustered master/slave environments
+    app {
+        
+        master => {
+            name => 'mongodbi_cddb',
+            host => 'mongodb://localhost:27017'
+        },
+        slaves => [{
+            name => 'mongodbi_cddb',
+            host => 'mongodb://192.168.1.101:27017'
+        },{
+            name => 'mongodbi_cddb',
+            host => 'mongodb://192.168.1.102:27017'
+        },{
+            name => 'mongodbi_cddb',
+            host => 'mongodb://192.168.1.103:27017'
+        }]
         
     };
 

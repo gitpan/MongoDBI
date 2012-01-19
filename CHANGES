@@ -3,10 +3,12 @@ This file documents the revision history for the Perl library MongoDBI.
 -       figure out a means to prevent reserved word, database keyword and schema
         attribute naming collisions
         
--       database connection pooling with the ability to read and write to
-        different connections
-        
 -       process indexing so that order is preserved
+
+0.0.8   2012-01-17
+
+x       added execute_on method in Operations to support for database connection
+        pooling with the ability to read and write to different connections
 
 0.0.7   2012-01-08
 

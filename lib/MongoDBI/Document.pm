@@ -5,12 +5,12 @@ use warnings;
 
 package MongoDBI::Document;
 {
-  $MongoDBI::Document::VERSION = '0.0.7';
+  $MongoDBI::Document::VERSION = '0.0.8';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.7'; # VERSION
+our $VERSION = '0.0.8'; # VERSION
 
 use Moose ('extends');
 
@@ -35,7 +35,7 @@ MongoDBI::Document - Defines and Represents a MongoDB Collection and Document
 
 =head1 VERSION
 
-version 0.0.7
+version 0.0.8
 
 =head1 SYNOPSIS
 

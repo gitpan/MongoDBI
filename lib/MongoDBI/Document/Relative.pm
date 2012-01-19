@@ -5,12 +5,12 @@ use warnings;
 
 package MongoDBI::Document::Relative;
 {
-  $MongoDBI::Document::Relative::VERSION = '0.0.7';
+  $MongoDBI::Document::Relative::VERSION = '0.0.8';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.7'; # VERSION
+our $VERSION = '0.0.8'; # VERSION
 
 use Moose;
 
@@ -283,7 +283,7 @@ MongoDBI::Document::Relative - A Relationship Wrapper Around MongoDBI Relational
 
 =head1 VERSION
 
-version 0.0.7
+version 0.0.8
 
 =head1 SYNOPSIS
 
