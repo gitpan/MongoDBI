@@ -5,7 +5,7 @@ use warnings;
 
 package MongoDBI::Document::Storage::Criterion;
 {
-  $MongoDBI::Document::Storage::Criterion::VERSION = '0.0.8';
+  $MongoDBI::Document::Storage::Criterion::VERSION = '0.0.9';
 }
 
 use Moose;
@@ -13,7 +13,7 @@ use boolean;
 
 use 5.001000;
 
-our $VERSION = '0.0.8'; # VERSION
+our $VERSION = '0.0.9'; # VERSION
 
 
 
@@ -41,7 +41,7 @@ sub arg_parser {
     
     foreach my $key ( keys %args ) {
         
-        if ($key =~ /(\$[a-z]+)$/) {
+        if ($key =~ /[^\$ ](\$[a-z]+)$/) {
             
             my $symbol = $1;
             my $regex  = '\\'.$1;
@@ -58,7 +58,7 @@ sub arg_parser {
             
             else {
                 
-                $args{$key} = { $symbol => delete $args{"$key$symbol"} };
+                $args{$key}->{$symbol} = delete $args{"$key$symbol"};
                 
             }
             
@@ -409,7 +409,7 @@ MongoDBI::Document::Storage::Criterion - MongoDBI Chainable Collection Query Bui
 
 =head1 VERSION
 
-version 0.0.8
+version 0.0.9
 
 =head1 SYNOPSIS
 

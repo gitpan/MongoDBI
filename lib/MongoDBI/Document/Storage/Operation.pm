@@ -5,12 +5,12 @@ use warnings;
 
 package MongoDBI::Document::Storage::Operation;
 {
-  $MongoDBI::Document::Storage::Operation::VERSION = '0.0.8';
+  $MongoDBI::Document::Storage::Operation::VERSION = '0.0.9';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.8'; # VERSION
+our $VERSION = '0.0.9'; # VERSION
 
 use Moose::Role;
 
@@ -179,8 +179,9 @@ sub collapse {
         
         # additionally, be mindful of fields with default values
         # if they had been set by the app, they'd be marked as dirty and
-        # should exist in $data
-        if (!defined $data->{$name} && $config->{default}) {
+        # should exist in $data ... if they haven't been set but have default
+        # values, try the accessor
+        if (! defined $data->{$name} && $config->{default}) {
             
             $data->{$name} = "CODE" eq ref $config->{default} ?
                 $config->{default}->($self) : $config->{default};
@@ -846,7 +847,7 @@ MongoDBI::Document::Storage::Operation - Standard MongoDBI Document/Collection O
 
 =head1 VERSION
 
-version 0.0.8
+version 0.0.9
 
 =head1 SYNOPSIS
 
