@@ -5,12 +5,12 @@ use warnings;
 
 package MongoDBI::Document::Sugar;
 {
-  $MongoDBI::Document::Sugar::VERSION = '0.0.9';
+  $MongoDBI::Document::Sugar::VERSION = '0.0.10';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.9'; # VERSION
+our $VERSION = '0.0.10'; # VERSION
 
 use Moose::Role;
 
@@ -40,6 +40,7 @@ Moose::Exporter->setup_import_methods(
         is_bool
         is_date
         is_hash
+        is_id
         is_int
         is_num
         is_req
@@ -559,7 +560,7 @@ MongoDBI::Document::Sugar - Syntactic Sugar For Defining MongoDBI Document Class
 
 =head1 VERSION
 
-version 0.0.9
+version 0.0.10
 
 =head1 SYNOPSIS
 
