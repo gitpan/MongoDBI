@@ -5,12 +5,12 @@ use warnings;
 
 package MongoDBI::Document::Sugar;
 {
-  $MongoDBI::Document::Sugar::VERSION = '0.0.10';
+  $MongoDBI::Document::Sugar::VERSION = '0.0.12';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.10'; # VERSION
+our $VERSION = '0.0.12'; # VERSION
 
 use Moose::Role;
 
@@ -41,6 +41,7 @@ Moose::Exporter->setup_import_methods(
         is_date
         is_hash
         is_id
+        is_inc
         is_int
         is_num
         is_req
@@ -560,7 +561,7 @@ MongoDBI::Document::Sugar - Syntactic Sugar For Defining MongoDBI Document Class
 
 =head1 VERSION
 
-version 0.0.10
+version 0.0.12
 
 =head1 SYNOPSIS
 
@@ -936,8 +937,9 @@ The is_inc keyword is L<Moose> attribute shorthand for the following:
     # is the equivalent of:
     
     key 'child' => (
-        is  => 'rw',
-        isa => 'Int',
+        is   => 'rw',
+        isa  => 'Int',
+        lazy => 1,
         default => sub {
             ... # count documents + 1
         }

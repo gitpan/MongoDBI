@@ -5,6 +5,14 @@ This file documents the revision history for the Perl library MongoDBI.
         
 -       process indexing so that order is preserved
 
+0.0.12   2012-01-28
+
+x       added missing is_inc shortcut not exported by M::D::Sugar
+
+x       added the foreach_document method being a wrapper around cursor
+
+x       changed main module synopsis
+
 0.0.10   2012-01-22
 
 x       fixed bug, is_id shortcut not exported by M::D::Sugar

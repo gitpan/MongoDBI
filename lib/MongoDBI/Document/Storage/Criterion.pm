@@ -5,7 +5,7 @@ use warnings;
 
 package MongoDBI::Document::Storage::Criterion;
 {
-  $MongoDBI::Document::Storage::Criterion::VERSION = '0.0.10';
+  $MongoDBI::Document::Storage::Criterion::VERSION = '0.0.12';
 }
 
 use Moose;
@@ -13,7 +13,7 @@ use boolean;
 
 use 5.001000;
 
-our $VERSION = '0.0.10'; # VERSION
+our $VERSION = '0.0.12'; # VERSION
 
 
 
@@ -184,21 +184,27 @@ sub desc_sort {
     
 }
 
-# NEEDS POD, ONCE I FIND THE RIGHT APPROACH
 
-sub exists {
+sub foreach_document {
     
-    my ($self, @keys) = @_;
+    my $self = shift;
+    my $code = shift;
     
-    foreach my $key ( @keys ) {
+    return 0 unless "CODE" eq ref $code;
+    
+    my $cursor = $self->query;
+    
+    while (my $row = $cursor->next) {
         
-        $self->where($key => qr/./);
+        last unless $code->($row, $self, $cursor)
         
     }
     
-    return $self;
+    return $cursor;
     
 }
+
+sub foreach_doc { goto &foreach_document }
 
 
 sub limit {
@@ -409,7 +415,7 @@ MongoDBI::Document::Storage::Criterion - MongoDBI Chainable Collection Query Bui
 
 =head1 VERSION
 
-version 0.0.10
+version 0.0.12
 
 =head1 SYNOPSIS
 
@@ -511,6 +517,20 @@ The desc_sort method adds a criterion that instructs the L<MongoDB::Collection>
 query method to sort the results on specified key in descending order.
 
     $search->desc_sort('first_name', 'last_name');
+
+=head2 foreach_document
+
+The foreach_document method queries the database using the existing criteria and
+loops incrementally executing the coderef passed foreach document in the resultset.
+This method will proceed to loop through all the documents in the resultset as
+long as the passed-in coderef returns a true value.
+
+    my $code = sub {
+        my ($row, $self, $cursor) = @_;
+        # ...
+    };
+    
+    my $cursor = $search->foreach_document($code);
 
 =head2 limit
 

@@ -2,9 +2,11 @@ NAME
     MongoDBI - A proper ODM (Object-Document-Mapper) for MongoDB
 
 VERSION
-    version 0.0.10
+    version 0.0.12
 
 SYNOPSIS
+    ... in CDDB.pm
+
         package CDDB;
 
         use MongoDBI;
@@ -26,25 +28,59 @@ SYNOPSIS
         };
     
         1;
+
+    ... in CDDB/Album.pm
+
+        package CDDB::Album;
     
-        package main ;
+        use MongoDBI::Document;
     
+        # collection name
+        store 'albums';
+    
+        # required fields
+        key 'title',    is_str,  is_req;
+        key 'released', is_date, is_req;
+    
+        # optional fields
+        key 'rating', is_int, default => 1;
+    
+        # embedded documents
+        embed 'tracks', class => 'CDDB::Track', type => 'multiple';
+    
+        # related artist document
+        has_one 'band', class => 'CDDB::Artist';
+    
+        # stored query
+        filter 'top_rated' => sub {
+        
+            my ($filter, $self, @args) = @_;
+        
+            $filter->where('rating$gte' => 5 )
+        
+        };
+    
+        1;
+
+    ... and finally in your script.pl
+
         use DateTime;
     
         my $cddb = CDDB->new;
     
         my $cds  = $cddb->class('album'); # grabs CDDB::Album
     
-        # find cds released during or after the year 2000
-        my $year_2000 = DateTime->now->set(year => 2000, month => 1, day => 1);
-
-        my $search = $cds->search->where('released$gt' => $year_2000)->query;
+        my $cd = $cds->new(
+            title    => 'Just doin my job boss',
+            released => DateTime->now
+        );
     
-        while (my $cd = $search->next) {
-        
-            print $cd->title, "\n";
-        
-        }
+        $cd->insert;
+    
+        # search using stored query (aka filter) and loop
+        $cds->search('top_rated')->foreach_document(sub{    
+            print shift->{title}, "\n"
+        });
 
 DESCRIPTION
     Why MongoDB? "MongoDB has the best features of document, key/value and
@@ -66,11 +102,6 @@ DESCRIPTION
     etc), lean document updates via dirty field tracking, and ability for
     each class to be configured to use a different database and connection,
     etc.
-
-    Note! This library is still in its infancy and subject to change in code
-    and in the overall design. The POD (documentation) may also be lacking
-    in certain areas, for additional insight you may examine the
-    accompanying tests.
 
     This class, MongoDBI, sub-classes MongoDBI::Application, please review
     that module for more usage information.

@@ -9,7 +9,7 @@ BEGIN {
     use lib $FindBin::Bin . '/../lib';
 
     plan $ENV{TEST_MONGODBI}
-      ? ( tests => 26 )
+      ? ( tests => 27 )
       : ( skip_all => 'TEST_MONGODBI is not set. Tests skipped.' );
 }
 
@@ -86,7 +86,13 @@ ok do {
 ok do {
     my $search = $zips->query('in_maryland_area');
     $search->count == 421
-},  'found 421 cities in maryland';
+},  'found 421 cities in maryland area';
+
+ok do {
+    my $i = 0;
+    my $search = $zips->search('in_maryland_area')->foreach_doc(sub{ ++$i });
+    $search->count == 421 && $i == 421
+},  '421 cities in maryland area counted manually via the foreach_doc method';
 
 ok do {
     my $search = $zips->query('in_tristate_area');

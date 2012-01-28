@@ -5,12 +5,12 @@ use warnings;
 
 package MongoDBI::Document::Storage::Operation;
 {
-  $MongoDBI::Document::Storage::Operation::VERSION = '0.0.10';
+  $MongoDBI::Document::Storage::Operation::VERSION = '0.0.12';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.10'; # VERSION
+our $VERSION = '0.0.12'; # VERSION
 
 use Moose::Role;
 
@@ -63,10 +63,10 @@ sub clone {
 
 sub collapse {
 
-    my $self = shift;
-    my $data = {};
+    my $self    = shift;
+    my $data    = {};
     
-    # in an attempt to achieve maximum efficiency, only collapse dirty fields
+    # only collapse dirty fields
     while (my($field, $changes) = each(%{$self->_dirty})) {
         
         $data->{$field} = $changes->[-1]->{new_value};
@@ -803,6 +803,27 @@ sub search {
     
 }
 
+# TODO: to_bson method
+sub to_bson {
+    
+    # ...
+    
+}
+
+# TODO: to_hash method
+sub to_hash {
+    
+    # ...
+    
+}
+
+# TODO: to_json method
+sub to_json {
+    
+    # ...
+    
+}
+
 
 sub update {
     
@@ -847,7 +868,7 @@ MongoDBI::Document::Storage::Operation - Standard MongoDBI Document/Collection O
 
 =head1 VERSION
 
-version 0.0.10
+version 0.0.12
 
 =head1 SYNOPSIS
 
