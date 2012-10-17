@@ -1,12 +1,13 @@
 ---
-abstract: 'A proper ODM (Object-Document-Mapper) for MongoDB '
+abstract: 'A proper ODM (Object-Document-Mapper) for MongoDB'
 author:
   - 'Al Newkirk <awncorp@cpan.org>'
+  - 'Robert Grimes <buu@erxz.com>'
 build_requires: {}
 configure_requires:
   ExtUtils::MakeMaker: 6.30
 dynamic_config: 0
-generated_by: 'Dist::Zilla version 4.300006, CPAN::Meta::Converter version 2.113640'
+generated_by: 'Dist::Zilla version 4.300024, CPAN::Meta::Converter version 2.120921'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -24,7 +25,7 @@ requires:
   Scalar::Util: 0
   boolean: 0
 resources:
-  bugtracker: http://rt.cpan.org/NoAuth/Bugs.html?Dist=MongoDBI
-  homepage: http://ana.io/
+  bugtracker: https://github.com/alnewkirk/MongoDBI/issues
+  homepage: http://github.com/alnewkirk/MongoDBI
   repository: http://github.com/alnewkirk/MongoDBI.git
-version: 0.0.12
+version: 0.02

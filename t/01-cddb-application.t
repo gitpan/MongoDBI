@@ -127,6 +127,4 @@ ok $cd->insert, 'first album created successfully';
 
 # destroy, kill, end of days
 
-ok $app->config->{connection}->get_database('mongodbi_cddb')->drop,
-
-    'droping database mongodbi_cddb' ;
+ok $app->config->{connection}->get_database('mongodbi_cddb')->drop, 'dropping database mongodbi_cddb' ;

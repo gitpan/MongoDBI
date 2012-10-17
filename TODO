@@ -1,0 +1,18 @@
+MongoDBI's TODO list:
+
+* Add support for exporting 'Short Aliases' for loaded sub-classes from the Application sub-class code.
+* * That is if you have Foo::Model and Foo::Model::ClassName; then loading Foo::Model should export a sub that allows you to perform operations on ClassName without fully qualifying it.
+
+* Evaluate and add support for lazy-loading, if possible. Problems to consider:
+* * If every field, or sub-document, is lazy-loaded by default then this could cause unintuitive performance decreases when a user accesses multiple fields that all required database access.
+* * If lazy-loading is default then we need to add support for specifying which fields must be retrieved from the database when we fetch a new object. Presumably this would be at the point in the code where we execute the fetch, although potentially it could be "configured" in the Model file.
+
+* Fix existing bugs in the _dirty fields tracking implementation(?) and add support for doing smart things when tracking dirty fields in embedded/child documents.
+* * Bug 1: Modifying the elements of hashrefs stored as keys of the object will not cause the hashref itself to be marked as dirty and therefor updated, Tie::HashHistory may be a viable solution.
+
+* General overhaul of the documentation:
+* * Edit the 'store' method documentation to clarify that it doesn't access the database when you call save
+* * Clarify how the _dirty fields method works
+* * Add more examples to the "Main" documentation page that covers the vast majority of the useful classes and methods.
+* * Add more pointers to the ::Sugar documentation page.
+* * Clarify the documentation for multiple arguments being passed to the 'key' helper as well as how 'embed' and 'has_many' works.

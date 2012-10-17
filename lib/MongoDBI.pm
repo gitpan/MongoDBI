@@ -1,16 +1,16 @@
-# ABSTRACT: A proper ODM (Object-Document-Mapper) for MongoDB 
+# ABSTRACT: A proper ODM (Object-Document-Mapper) for MongoDB
 
 use strict;
 use warnings;
 
 package MongoDBI;
 {
-  $MongoDBI::VERSION = '0.0.12';
+    $MongoDBI::VERSION = '0.02';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.12'; # VERSION
+our $VERSION = '0.02';    # VERSION
 
 use Moose ('extends');
 
@@ -18,16 +18,17 @@ extends 'MongoDBI::Application';
 
 
 1;
+
 __END__
 =pod
 
 =head1 NAME
 
-MongoDBI - A proper ODM (Object-Document-Mapper) for MongoDB 
+MongoDBI - A proper ODM (Object-Document-Mapper) for MongoDB
 
 =head1 VERSION
 
-version 0.0.12
+version 0.02
 
 =head1 SYNOPSIS
 
@@ -36,83 +37,92 @@ version 0.0.12
     package CDDB;
 
     use MongoDBI;
-    
+
     app {
-    
+
         # shared mongodb connection
         database => {
             name => 'mongodbi_cddb',
             host => 'mongodb://localhost:27017'
         },
-    
+
         # load child doc classes
         classes => {
             self => 1, # loads CDDB::*
             load => ['Other::Namespace']
         }
-    
+
     };
-    
+
     1;
 
 ... in CDDB/Album.pm
 
     package CDDB::Album;
-    
+
     use MongoDBI::Document;
-    
+
     # collection name
     store 'albums';
-    
+
     # required fields
     key 'title',    is_str,  is_req;
     key 'released', is_date, is_req;
-    
+
     # optional fields
     key 'rating', is_int, default => 1;
-    
+
     # embedded documents
     embed 'tracks', class => 'CDDB::Track', type => 'multiple';
-    
+
     # related artist document
     has_one 'band', class => 'CDDB::Artist';
-    
+
     # stored query
     filter 'top_rated' => sub {
-        
+
         my ($filter, $self, @args) = @_;
-        
+
         $filter->where('rating$gte' => 5 )
-        
+
     };
-    
+
     1;
 
 ... and finally in your script.pl
 
     use DateTime;
-    
+
     my $cddb = CDDB->new;
-    
+
     my $cds  = $cddb->class('album'); # grabs CDDB::Album
-    
+
     my $cd = $cds->new(
         title    => 'Just doin my job boss',
         released => DateTime->now
     );
-    
+
     $cd->insert;
-    
+
     # search using stored query (aka filter) and loop
-    $cds->search('top_rated')->foreach_document(sub{    
+    $cds->search('top_rated')->foreach_document(sub{
         print shift->{title}, "\n"
     });
 
 =head1 DESCRIPTION
 
-Why MongoDB?
-"MongoDB has the best features of document, key/value and relational
-databases."
+NOTE: This librrary is scheduled for a complete rewrite in the comming months.
+
+Why a document database, why MongoDB?
+"MongoDB has the best features of document, key/value and relational databases,
+and is designed to be web-scale".
+
+Why not an RDBMS?
+"Use the right tool for the job, there are no silver bullets, one-size does
+not fit all, variety is good, TIMTOWTDI, etc, etc.", additionally, if an RDBMS
+fits your use-case better as-a-whole, then thats the tool you should use, and
+likewise, if an RDBMS only partially solves your problem, then you should use
+it partially. The point is, implement what makes sense.
 
 MongoDBI is an Object-Document-Mapper (ODM) for L<MongoDB>. It allows you to
 create L<Moose>-based classes to interact with MongoDB databases. Born out of
@@ -131,13 +141,23 @@ configured to use a different database and connection, etc.
 This class, MongoDBI, sub-classes L<MongoDBI::Application>, please review that
 module for more usage information.
 
-=head1 AUTHOR
+=head1 AUTHORS
+
+=over 4
+
+=item *
 
 Al Newkirk <awncorp@cpan.org>
 
+=item *
+
+Robert Grimes <buu@erxz.com>
+
+=back
+
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2011 by awncorp.
+This software is copyright (c) 2012 by awncorp.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.

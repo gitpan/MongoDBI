@@ -9,8 +9,8 @@ use ExtUtils::MakeMaker 6.30;
 
 
 my %WriteMakefileArgs = (
-  "ABSTRACT" => "A proper ODM (Object-Document-Mapper) for MongoDB ",
-  "AUTHOR" => "Al Newkirk <awncorp\@cpan.org>",
+  "ABSTRACT" => "A proper ODM (Object-Document-Mapper) for MongoDB",
+  "AUTHOR" => "Al Newkirk <awncorp\@cpan.org>, Robert Grimes <buu\@erxz.com>",
   "BUILD_REQUIRES" => {},
   "CONFIGURE_REQUIRES" => {
     "ExtUtils::MakeMaker" => "6.30"
@@ -31,7 +31,7 @@ my %WriteMakefileArgs = (
     "Scalar::Util" => 0,
     "boolean" => 0
   },
-  "VERSION" => "0.0.12",
+  "VERSION" => "0.02",
   "test" => {
     "TESTS" => "t/*.t"
   }

@@ -5,6 +5,8 @@ META.yml
 Makefile.PL
 README
 README.mkdn
+TODO
+eg/example.pl
 lib/MongoDBI.pm
 lib/MongoDBI/Application.pm
 lib/MongoDBI/Document.pm
@@ -15,11 +17,13 @@ lib/MongoDBI/Document/GridFile.pm
 lib/MongoDBI/Document/Relative.pm
 lib/MongoDBI/Document/Storage.pm
 lib/MongoDBI/Document/Storage/Criterion.pm
+lib/MongoDBI/Document/Storage/Cursor.pm
 lib/MongoDBI/Document/Storage/Operation.pm
 lib/MongoDBI/Document/Sugar.pm
 t/00-load-classes.t
 t/00-load-roles.t
 t/01-cddb-application.t
+t/02-cddb_node.t
 t/90-zips-startup.t
 t/91-zips-querying.t
 t/99-zips-killall.t
@@ -27,5 +31,6 @@ t/assets/zips.json
 t/lib/CDDB.pm
 t/lib/CDDB/Album.pm
 t/lib/CDDB/Artist.pm
+t/lib/CDDB/Node.pm
 t/lib/CDDB/Person.pm
 t/lib/CDDB/Track.pm

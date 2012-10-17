@@ -5,27 +5,20 @@ use warnings;
 
 package MongoDBI::Document;
 {
-  $MongoDBI::Document::VERSION = '0.0.12';
+    $MongoDBI::Document::VERSION = '0.02';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.12'; # VERSION
+our $VERSION = '0.02';    # VERSION
 
 use Moose ('extends');
 
 extends 'MongoDBI::Document::Base';
 
 
-
-
-
-
-
-
-
-
 1;
+
 __END__
 =pod
 
@@ -35,7 +28,7 @@ MongoDBI::Document - Defines and Represents a MongoDB Collection and Document
 
 =head1 VERSION
 
-version 0.0.12
+version 0.02
 
 =head1 SYNOPSIS
 
@@ -162,11 +155,9 @@ different classes operating on different machines.
 
 =head2 DOCUMENT STORAGE
 
-MongoDBI::Document by default generates its collection name by transforming the
-class name and pluralizing it thus storing the class Album in the collection
-albums, or CDDB::Album in the collection cddb_albums. This functionality can be
-averted by using the store() declaration or using the set_collection() config
-method. Read more on these methods in L<MongoDBI::Document::Config>.
+MongoDBI::Document uses the store() declaration or the set_collection() config
+method to set the name of the collection utilized by each class.
+Read more on these methods in L<MongoDBI::Document::Config>.
 
     # option A
     package CDDB::Album;
@@ -180,22 +171,6 @@ method. Read more on these methods in L<MongoDBI::Document::Config>.
     
     package main;
     CDDB::Album->config->set_collection(name => 'the_albums');
-    
-    # option C
-    CDDB::Album->config->set_collection(
-        naming => ['short', 'plural']
-    );
-    
-    # valid option C naming keys are as follows:
-    
-        * same - as-is
-        * short - only the final portion of the package name
-        * plural - unintelligent 's' adder
-        * decamel - MyApp becomes my_app
-        * undercolon - :: becomes _
-        * lower/lc - lowercase string
-        * upper/uc - uppercase string
-        * default - same as (decamel, undercolon, lower, plural)
 
 =head2 FIELD DECLARATIONS
 
@@ -254,8 +229,8 @@ L<MongoDBI::Document::Sugar> documentation.
 =head2 FIELD DIRTY TRACKING
 
 MongoDBI::Document supports the tracking of changed or "dirty" fields by placing
-triggers on class attributes which retain a complete history of the changes to
-its field for the life of the parent object.
+triggers on class attributes which denote whether the value has deviated from
+its initial state.
 
 If a defined field has been modified by it will be marked as dirty and
 accessible as follows:
@@ -270,15 +245,10 @@ accessible as follows:
         if ($cd->changed('title')) {
             
             print "You changed the title!";
-            print "Title is now, ", $cd->change('title')->{new_value};
             
         }
         
     }
-    
-    # or, ... directly access the history
-    $cd->_dirty->{title}->[2]->{new_value}; # 3rd title change
-    $cd->_dirty->{title}->[2]->{old_value}; # value before 3rd title change
 
 =head2 CLASS INHERITANCE
 
@@ -432,13 +402,23 @@ relationship:
 For a more in-depth look at relationships, please review the documentation for
 L<MongoDBI::Document::Child> and L<MongoDBI::Document::Relative>.
 
-=head1 AUTHOR
+=head1 AUTHORS
+
+=over 4
+
+=item *
 
 Al Newkirk <awncorp@cpan.org>
 
+=item *
+
+Robert Grimes <buu@erxz.com>
+
+=back
+
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2011 by awncorp.
+This software is copyright (c) 2012 by awncorp.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.

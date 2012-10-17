@@ -5,12 +5,12 @@ use warnings;
 
 package MongoDBI::Application;
 {
-  $MongoDBI::Application::VERSION = '0.0.12';
+    $MongoDBI::Application::VERSION = '0.02';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.12'; # VERSION
+our $VERSION = '0.02';    # VERSION
 
 use Moose ();
 use Moose::Exporter;
@@ -19,161 +19,204 @@ use Module::Find;
 
 Moose::Exporter->setup_import_methods(
 
-    with_meta => [qw(
-        app
-    )],
-    
-    also      => [qw(
-        Moose
-    )],
-    
+    with_meta => [
+        qw(
+          app
+          )
+    ],
+
+    also => [
+        qw(
+          Moose
+          )
+    ],
+
 );
 
 sub init_meta {
-    
+
     my ($dummy, %opts) = @_;
-    
+
     my $meta = Moose->init_meta(%opts);
-    
-    Moose::Util::MetaRole::apply_base_class_roles(
-        for => $opts{for_class},
-    );
-    
+
+    Moose::Util::MetaRole::apply_base_class_roles(for => $opts{for_class},);
+
     $meta->add_attribute(
-        _config      => (
-            is      => 'rw',
-            isa     => 'HashRef'
+        _config => (
+            is  => 'rw',
+            isa => 'HashRef'
         )
     );
-    
+
     $meta->add_method(
         class => sub {
-                
+
             my ($self, $name) = @_;
-            
+
             return $self->config->{classes}->{$name};
-            
+
         }
     );
-    
+
+    $meta->add_method(
+        classes => sub {
+            my ($self) = @_;
+
+            return @{$self->config->{class_list}};
+        }
+    );
+
     $meta->add_method(
         config => sub {
-            
+
             shift->meta->get_attribute('_config');
-        
+
         }
     );
-    
+
     return Class::MOP::class_of($opts{for_class});
-    
+
 }
 
 sub app {
-    
+
     my ($meta, $args) = @_;
-    
+
     my $config = $meta->get_attribute('_config');
-    
+
     # prepare mongodb connection for sharing
     if (values %{$args->{database}}) {
-        
+
         $args->{database}->{db_name} = delete $args->{database}->{name}
-            if $args->{database}->{name};
-        
+          if $args->{database}->{name};
+
         die "Please specify the name of the database"
-            unless $args->{database}->{db_name};
-        
-        $config->{connection} =
-            MongoDB::Connection->new(%{$args->{database}});
-        
+          unless $args->{database}->{db_name};
+
+        $config->{connection} = MongoDB::Connection->new(%{$args->{database}});
+
     }
-    
+
     # load specified application classes
     my $class_name = $meta->{package};
     my @class_list = ();
-    
+
     # load children of self
     if ($args->{classes}->{self}) {
-        
+
         push @class_list, useall($class_name);
-        
+
     }
-    
+
     # load additional supporting classes
     if ($args->{classes}->{load}) {
-        
+
         foreach my $class_name (@{$args->{classes}->{load}}) {
-            
+
             my $class_file = $class_name;
-               $class_file =~ s/::/\//g;
-            
+            $class_file =~ s/::/\//g;
+
             eval { require $class_name } unless $INC{"$class_file.pm"};
             push @class_list, useall($class_name);
-            
+
         }
-        
+
     }
-    
+
+    $config->{class_list} = \@class_list;
+
     foreach my $class (@class_list) {
-        
+
         # register class name variations
         my $class_shortname = $class;
-           $class_shortname =~ s/^$class_name\:://;
-           
+        $class_shortname =~ s/^$class_name\:://;
+
         my $class_slang = $class_shortname;
-           $class_slang =~ s/([a-z])([A-Z])/$1_$2/g;
-           $class_slang =~ s/::/_/g;
-           $class_slang = lc $class_slang;
-           
-           $config->{classes}->{$class} = $class;
-           $config->{classes}->{$class_shortname} = $class;
-           $config->{classes}->{$class_slang} = $class;
-        
+        $class_slang =~ s/([a-z])([A-Z])/$1_$2/g;
+        $class_slang =~ s/::/_/g;
+        $class_slang = lc $class_slang;
+
+        $config->{classes}->{$class}           = $class;
+        $config->{classes}->{$class_shortname} = $class;
+        $config->{classes}->{$class_slang}     = $class;
+
         # configure child classes with shared config
         if ($config->{connection}) {
-            
-            my %db_config = %{$args->{database}||$args->{master}};
-               
-               # for clusters
-               $db_config{master} = $args->{master} if $args->{master};
-               $db_config{slaves} = $args->{slaves} if $args->{slaves};
-            
+
+            my %db_config = %{$args->{database} || $args->{master}};
+
+            # for clusters
+            $db_config{master} = $args->{master} if $args->{master};
+            $db_config{slaves} = $args->{slaves} if $args->{slaves};
+
             $db_config{name} = delete $db_config{db_name}
-                if $db_config{db_name};
-            
+              if $db_config{db_name};
+
             $class->config->set_database(%db_config);
             $class->config->set_collection(%{$args->{collection}});
-            
-            my $database_name = $class->config->database->{'name'} ;
-            my $collection_name = $class->config->collection->{'name'} ;
-            
-            my $con  = $config->{connection};
-            my $db   = $con->get_database( $database_name );
-            my $col  = $db->get_collection( $collection_name );
-            
+
+            my $database_name   = $class->config->database->{'name'};
+            my $collection_name = $class->config->collection->{'name'};
+
+            my $con = $config->{connection};
+            my $db  = $con->get_database($database_name);
+            my $col = $db->get_collection($collection_name);
+
             $class->config->_mongo_collection($col);
             $class->config->_mongo_connection($con);
-            
+
             $class->config->database->{connected} = 1;
-            
+
             # apply index instructions
             foreach my $spec (@{$class->config->indexes}) {
+
                 # spell-it-out so the references aren't altered
-                $col->ensure_index({%{$spec->[0]}},{%{$spec->[1]}});
+                $col->ensure_index({%{$spec->[0]}}, {%{$spec->[1]}});
             }
-            
+
         }
-        
+
     }
-    
+
+    #TODO
+    # Document this
+    # Add support for various arguments:
+    # What to do if shortnames clash
+    # Or smarter handling of clashing exported names
+    # and so on
+    if ($args->{export_shortnames}) {
+        add_shortname_exporter_to_caller($meta, @class_list);
+    }
 }
 
+# This name is.. temporary.. yes that's the ticket..
+sub add_shortname_exporter_to_caller {
+    my ($meta, @classes) = @_;
+    my $calling_package = $meta->{package};
 
+    my @make_classes;
+    for my $class (@classes) {
 
+        my $short_name = $class =~ /::([^:]+)$/ ? $1 : $class;
 
+        push @make_classes, [$class, $short_name];
+    }
+
+    no strict 'refs';
+    *{"${calling_package}::import"} = sub {
+        my $export_package = caller;
+        for (@make_classes) {
+            my ($class, $short_name) = @$_;
+            *{"${export_package}::$short_name"} = sub() {$class};
+        }
+
+        return 42;
+    };
+}
 
 1;
-__END__
+
+
 =pod
 
 =head1 NAME
@@ -182,7 +225,7 @@ MongoDBI::Application - MongoDBI Application Class and Document Class Controller
 
 =head1 VERSION
 
-version 0.0.12
+version 0.02
 
 =head1 SYNOPSIS
 
@@ -321,16 +364,33 @@ short-name and returns the fully-qualified class name.
     my $foo = $app->class('Foo'); # returns App::Foo;
     my $bar = $app->class('BarBaz'); # returns App::BarBaz;
 
-=head1 AUTHOR
+=head1 AUTHORS
+
+=over 4
+
+=item *
 
 Al Newkirk <awncorp@cpan.org>
 
+=item *
+
+Robert Grimes <buu@erxz.com>
+
+=back
+
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2011 by awncorp.
+This software is copyright (c) 2012 by awncorp.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
 =cut
+
+
+__END__
+
+
+
+
 

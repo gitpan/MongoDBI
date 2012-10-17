@@ -5,26 +5,25 @@ use warnings;
 
 package MongoDBI::Document::Config;
 {
-  $MongoDBI::Document::Config::VERSION = '0.0.12';
+    $MongoDBI::Document::Config::VERSION = '0.02';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.12'; # VERSION
+our $VERSION = '0.02';    # VERSION
 
-use Moose::Role; # is trait (++ :)
-
+use Moose::Role;          # is trait (++ :)
 
 
 has _mongo_connection => (
-    is      => 'rw',
-    isa     => 'MongoDB::Connection'
+    is  => 'rw',
+    isa => 'MongoDB::Connection'
 );
 
 
 has _mongo_collection => (
-    is      => 'rw',
-    isa     => 'MongoDB::Collection'
+    is  => 'rw',
+    isa => 'MongoDB::Collection'
 );
 
 
@@ -62,11 +61,11 @@ has options => (
     is      => 'rw',
     isa     => 'HashRef',
     lazy    => 1,
-    default => sub { { safe => 1 } }
+    default => sub { {safe => 1} }
 );
 
 
-has searches  => (
+has searches => (
     is      => 'rw',
     isa     => 'HashRef',
     default => sub { {} }
@@ -75,64 +74,36 @@ has searches  => (
 
 sub set_collection {
     my ($self, @args) = @_;
-    
+
     my %args = @args == 1 ? (name => $args[0]) : @args;
-    
-    $args{name}
-        ||= $self->collection->{name}
-        ||  delete $self->collection->{db_name}
-        ||  $self->associated_class->{package};
-    
-    my %naming_template = (
-        same       => sub { $_[0] },
-        short      => sub { $_[0] =~ s{^.*\:\:(.*?)$}{$1}g; $_[0] },
-        plural     => sub { $_[0] =~ s{^.*\:\:(.*?)$}{$1}g; lc "$_[0]s" },
-        decamel    => sub { $_[0] =~ s{([a-z])([A-Z])}{$1_$2}g; lc $_[0] },
-        undercolon => sub { $_[0] =~ s{\:\:}{_}g; lc $_[0] },
-        lower      => sub { lc $_[0] },
-        lc         => sub { lc $_[0] },
-        upper      => sub { uc $_[0] },
-        uc         => sub { uc $_[0] },
-        default    => sub {
-            $_[0] =~ s{([a-z])([A-Z])}{$1_$2}g;
-            $_[0] =~ s{\:\:}{_}g;
-            lc "$_[0]s";
-        }
-    );
-    
-    # handle naming conventions
-    $args{naming}
-        ||= $self->collection->{naming}
-        ||  'default';
-        
-    $args{naming} = [$args{naming}] unless "ARRAY" eq ref $args{naming};
-    
-    foreach my $template (@{$args{naming}}) {
-        $args{name} = $naming_template{$template}->($args{name});
-    }
-    
-    $self->collection->{$_} = $args{$_} for keys %args;
-    
+
+    #$args{name} ||= $self->collection->{name}
+
+    #$self->collection->{$_} = $args{$_} for keys %args;
+
+    if ($args{name}) { $self->collection->{name} = $args{name} }
+
     return $self;
 }
 
 
 sub set_database {
     my ($self, @args) = @_;
-    
+
     my %args = @args == 1 ? (name => $args[0]) : @args;
-    
+
     $args{name} ||= $self->database->{name};
     $args{host} ||= '127.0.0.1';
-    
+
     die "Please specify the name of the database" unless $args{name};
-    
+
     $self->database->{$_} = $args{$_} for keys %args;
-    
+
     return $self;
 }
 
 1;
+
 __END__
 =pod
 
@@ -142,7 +113,7 @@ MongoDBI::Document::Config - Configuration for a MongoDBI Document Class
 
 =head1 VERSION
 
-version 0.0.12
+version 0.02
 
 =head1 SYNOPSIS
 
@@ -303,22 +274,6 @@ method as follows:
     
     # semantically correct
     $cds->config->set_database(name => 'albums');
-    
-    # sophisticated version
-    $cds->config->set_database(name => $cds, naming => [
-        short, plural, decamel
-    ]);
-    
-    # valid naming convention keys are:
-    
-    * same - as-is
-    * short - only the final portion of the package name
-    * plural - unintelligent 's' adder
-    * decamel - MyApp becomes my_app
-    * undercolon - :: becomes _
-    * lower/lc - lowercase string
-    * upper/uc - uppercase string
-    * default - same as (decamel, undercolon, lower, plural)
 
 =head2 set_database
 
@@ -335,13 +290,23 @@ method as follows:
     # semantically correct
     $cds->config->set_database(name => 'test');
 
-=head1 AUTHOR
+=head1 AUTHORS
+
+=over 4
+
+=item *
 
 Al Newkirk <awncorp@cpan.org>
 
+=item *
+
+Robert Grimes <buu@erxz.com>
+
+=back
+
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2011 by awncorp.
+This software is copyright (c) 2012 by awncorp.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.

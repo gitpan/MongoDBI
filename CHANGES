@@ -1,9 +1,13 @@
-This file documents the revision history for the Perl library MongoDBI.
+This file documents the revision history for the Perl library MongoDBI
+
+0.2.01
+
+-       process indexing so that order is preserved
+
+-       Changed name from MongoDBI to Myoll to MongoDBI
 
 -       figure out a means to prevent reserved word, database keyword and schema
         attribute naming collisions
-        
--       process indexing so that order is preserved
 
 0.0.12   2012-01-28
 

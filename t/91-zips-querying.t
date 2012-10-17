@@ -9,7 +9,7 @@ BEGIN {
     use lib $FindBin::Bin . '/../lib';
 
     plan $ENV{TEST_MONGODBI}
-      ? ( tests => 27 )
+      ? ( tests => 32 )
       : ( skip_all => 'TEST_MONGODBI is not set. Tests skipped.' );
 }
 
@@ -126,7 +126,7 @@ ok do {
 
 ok do {
     my $zip = $zips->find_or_create(
-        zip   => 00000,
+        zip   => "00000",
         pop   => 0,
         state => 'XX',
         city  => 'INTERNET',
@@ -138,23 +138,30 @@ ok do {
     
     $zip->terms(['NET','WWW']);
     $zip->save;
-    
+
 },  'created ficticious 00000 internet zip-code';
 
-ok do {
+{
+	my $zip = $zips->first( zip => "00000" );
+	ok( $zip, "Found our new zip-code" );
+	is( $zip->zip, "00000", "And it has the correct zip-code" );
+	is( $zip->city, 'INTERNET', "And it has the correct city" );
+}
+
+{
     my $search = $zips->search->all_in(terms => ['NET', 'WWW'])->query;
-    $search->count == 1
-},  'found 1 city using the all_in() method';
+    is( $search->count, 1, 'found 1 city using the all_in() method' );
+}
 
 ok do {
     my $search = $zips->search->any_in(terms => ['001', 'WWW', '100'])->query;
     $search->count == 1
 },  'found 1 city using the any_in() method';
 
-ok do {
+{
     my $search = $zips->search->any_of(state => 'PA', 'NJ')->query;
-    $search->count == 1998
-},  'found 1,998 city within PA and NJ using the any_of() method';
+    is( $search->count, 1998, 'found 1,998 city within PA and NJ using the any_of() method' );
+} 
 
 ok do {
     my $search = $zips->search->asc_sort('zip')->query;
@@ -176,39 +183,39 @@ ok do {
     $search->count == 100 ? 1 : 0
 },  'found 100 cities within geographical area using the near(50,30) method';
 
-ok do {
-    eval {
-        my $zip = $zips->find_or_create(
-            zip   => 00001,
-            pop   => 0,
-            state => 'ZZ',
-            city  => 'INTRANET',
-            loc   => {
-                x => 00.00,
-                y => 00.00
-            }
-        );
-    };
-    $@ ? 1 : 0
-},  'document w/malicious loc args dies with safe mode on (by default)';
+
+eval {
+		my $zip = $zips->find_or_create(
+				zip   => 00001,
+				pop   => 0,
+				state => 'ZZ',
+				city  => 'INTRANET',
+				loc   => {
+						x => 00.00,
+						y => 00.00
+				}
+		);
+		$zip->save;
+};
+like( $@, qr/not in correct format/, 'document w/malicious loc args dies with safe mode on (by default)' );
 
 $zips->config->options->{safe} = 0;
 
-ok do {
-    eval {
-        my $zip = $zips->find_or_create(
-            zip   => 00001,
-            pop   => 0,
-            state => 'ZZ',
-            city  => 'INTRANET',
-            loc   => {
-                x => 00.00,
-                y => 00.00
-            }
-        );
-    };
-    $@ ? 0 : 1
-},  'document w/malicious loc args lives with safe mode off';
+eval {
+		my $zip = $zips->find_or_create(
+				zip   => 00001,
+				pop   => 0,
+				state => 'ZZ',
+				city  => 'INTRANET',
+				loc   => {
+						x => 00.00,
+						y => 00.00
+				}
+		);
+		$zip->save;
+};
+
+is( $@, "", 'document w/malicious loc args lives with safe mode off' );
 
 $zips->config->options->{safe} = 1;
 
@@ -223,26 +230,27 @@ ok do {
 },  'found 27,417 cities in the US excluding the states PA, NJ, DE using the '.
     'not_in() method';
 
-ok do {
-    my $search = $zips->search->only('city')->limit(1)->query;
-    keys %{$search->next} == 2 ? 1 : 0 # city +id
-},  'only fetching the city tag using the only("city") method';
+{
+	my $search = $zips->search->only('city')->limit(1)->query;
+	my $zip = $search->next;
+	ok( $zip, 'only fetching the city tag using the only("city") method' );
+}
 
 # reqs MongoDB 2.0
 
-#ok do {
-#    my $search = $zips->search
-#        ->and_where(zip => '00000')->and_where(zip => '01001')->query;
-#    $search->count == 2 ? 1 : 0
-#},  'found 2 cities by zip using the and_where(...) method';
+{
+		my $search = $zips->search
+				->and_where(zip => '00000')->and_where(city => 'INTERNET')->query;
+		is( $search->count, 1, 'found 1 city by zip and city using the and_where(...) method' );
+}
 
 # reqs MongoDB 2.0
 
-#ok do {
-#    my $search = $zips->search
-#        ->or_where(zip => '00000')->or_where(zip => '01001')->query;
-#    $search->count == 1 ? 1 : 0
-#},  'found 1 cities by zip using the or_where(...) method';
+{
+		my $search = $zips->search
+				->or_where(zip => '00000')->or_where(zip => '01001')->query;
+		is( $search->count, 2, 'found 2 cities by zip using the or_where(...) method' );
+}
 
 ok do {
     my $search = $zips->search->where_exists('terms')->query;

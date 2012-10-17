@@ -5,16 +5,16 @@ use warnings;
 
 package MongoDBI::Document::Storage::Criterion;
 {
-  $MongoDBI::Document::Storage::Criterion::VERSION = '0.0.12';
+    $MongoDBI::Document::Storage::Criterion::VERSION = '0.02';
 }
+use MongoDBI::Document::Storage::Cursor;
 
 use Moose;
 use boolean;
 
 use 5.001000;
 
-our $VERSION = '0.0.12'; # VERSION
-
+our $VERSION = '0.02';    # VERSION
 
 
 has collection => (
@@ -23,389 +23,403 @@ has collection => (
     required => 1
 );
 
+has build_class => (
+    is       => 'ro',
+    isa      => 'Str',
+    required => 1,
+);
+
 
 has criteria => (
-    is       => 'rw',
-    isa      => 'HashRef',
-    default  => sub {{
-        select   => {},
-        where    => {},
-        order    => {},
-        options  => {}
-    }}
+    is      => 'rw',
+    isa     => 'HashRef',
+    default => sub {
+        {
+            select    => {},
+              where   => {},
+              order   => {},
+              options => {}
+        }
+    }
 );
 
 sub arg_parser {
-    
+
     my %args = @_;
-    
-    foreach my $key ( keys %args ) {
-        
+
+    foreach my $key (keys %args) {
+
         if ($key =~ /[^\$ ](\$[a-z]+)$/) {
-            
+
             my $symbol = $1;
-            my $regex  = '\\'.$1;
-            
+            my $regex  = '\\' . $1;
+
             $key =~ s/$regex$//;
-            
+
             if ($symbol eq '$btw') {
-                
-                my $values = delete $args{"$key$symbol"}; # arrayref
-                
-                $args{$key} = { '$gte' => $values->[0], '$lte' => $values->[1] };
-                
+
+                my $values = delete $args{"$key$symbol"};    # arrayref
+
+                $args{$key} = {'$gte' => $values->[0], '$lte' => $values->[1]};
+
             }
-            
+
             else {
-                
+
                 $args{$key}->{$symbol} = delete $args{"$key$symbol"};
-                
+
             }
-            
+
         }
-        
+
     }
-    
+
     return %args;
-    
+
 }
 
 
 sub all_in {
-    
+
     my ($self, $key, @values) = @_;
-    
-    foreach my $value ( @values ) {
-        
+
+    foreach my $value (@values) {
+
         push @{$self->criteria->{where}->{$key}->{'$all'}},
-            "ARRAY" eq ref $value? @{$value} : $value;
-        
+          "ARRAY" eq ref $value ? @{$value} : $value;
+
     }
-    
+
     return $self;
-    
+
 }
 
 
 sub all_of {
-    
+
     my ($self, @args) = @_;
-    
+
     for (my $i = 0; $i < @args; $i++) {
-        
+
         my ($key, $value) = ($args[$i], $args[++$i]);
-        
+
         push @{$self->criteria->{where}->{'$and'}},
-            { arg_parser($key => $value) };
-        
+          {arg_parser($key => $value)};
+
     }
-    
+
     return $self;
-    
+
 }
 
 
 sub and_where {
-    
+
     my ($self, @args) = @_;
-    
+
     for (my $i = 0; $i < @args; $i++) {
-        
+
         my ($key, $value) = ($args[$i], $args[++$i]);
-        
+
         push @{$self->criteria->{where}->{'$and'}},
-            { arg_parser($key => $value) };
-        
+          {arg_parser($key => $value)};
+
     }
-    
+
     return $self;
-    
+
 }
 
 
 sub any_in {
-    
+
     my ($self, $key, @values) = @_;
-    
-    foreach my $value ( @values ) {
-        
+
+    foreach my $value (@values) {
+
         push @{$self->criteria->{where}->{$key}->{'$in'}},
-            "ARRAY" eq ref $value? @{$value} : $value;
-        
+          "ARRAY" eq ref $value ? @{$value} : $value;
+
     }
-    
+
     return $self;
-    
+
 }
 
 
 sub any_of {
-    
+
     my ($self, $key, @values) = @_;
-    
-    foreach my $value ( @values ) {
-        
-        push @{$self->criteria->{where}->{'$or'}}, "ARRAY" eq ref $value?
-            map {{ $key => $_ }} @{$value} : { $key => $value };
-        
+
+    foreach my $value (@values) {
+
+        push @{$self->criteria->{where}->{'$or'}}, "ARRAY" eq ref $value
+          ? map {
+            { $key => $_ }
+          } @{$value}
+          : {$key => $value};
+
     }
-    
+
     return $self;
-    
+
 }
 
 
 sub asc_sort {
-    
+
     my ($self, @args) = @_;
-    
-    foreach my $key ( @args ) {
-        
+
+    foreach my $key (@args) {
+
         $self->criteria->{order}->{$key} = 1;
-        
+
     }
-    
+
     return $self;
-    
+
 }
 
 
 sub desc_sort {
-    
+
     my ($self, @args) = @_;
-    
-    foreach my $key ( @args ) {
-        
+
+    foreach my $key (@args) {
+
         $self->criteria->{order}->{$key} = -1;
-        
+
     }
-    
+
     return $self;
-    
+
 }
 
 
 sub foreach_document {
-    
+
     my $self = shift;
     my $code = shift;
-    
+
     return 0 unless "CODE" eq ref $code;
-    
+
     my $cursor = $self->query;
-    
+
     while (my $row = $cursor->next) {
-        
+
         last unless $code->($row, $self, $cursor)
-        
+
     }
-    
+
     return $cursor;
-    
+
 }
 
 sub foreach_doc { goto &foreach_document }
 
 
 sub limit {
-    
+
     my ($self, $limit) = @_;
-    
-    $self->criteria->{options}->{limit} = $limit if $limit ;
-    
+
+    $self->criteria->{options}->{limit} = $limit if $limit;
+
     return $self;
-    
+
 }
 
 
 sub near {
-    
+
     my ($self, $key, @values) = @_;
-    
-    foreach my $value ( @values ) {
-        
+
+    foreach my $value (@values) {
+
         push @{$self->criteria->{where}->{$key}->{'$near'}},
-            "ARRAY" eq ref $value? @{$value} : $value;
-        
+          "ARRAY" eq ref $value ? @{$value} : $value;
+
     }
-    
+
     return $self;
-    
+
 }
 
 
 sub never {
-    
+
     my ($self, @args) = @_;
-    
-    foreach my $key ( @args ) {
-        
+
+    foreach my $key (@args) {
+
         $self->criteria->{select}->{$key} = '0';
-        
+
     }
-    
+
     return $self;
-    
+
 }
 
 
 sub not_in {
-    
+
     my ($self, $key, @values) = @_;
-    
-    foreach my $value ( @values ) {
-        
+
+    foreach my $value (@values) {
+
         push @{$self->criteria->{where}->{$key}->{'$nin'}},
-            "ARRAY" eq ref $value? @{$value} : $value;
-        
+          "ARRAY" eq ref $value ? @{$value} : $value;
+
     }
-    
+
     return $self;
-    
+
 }
 
 
 sub only {
-    
+
     my ($self, @args) = @_;
-    
-    foreach my $key ( @args ) {
-        
+
+    foreach my $key (@args) {
+
         $self->criteria->{select}->{$key} = 1;
-        
+
     }
-    
+
     return $self;
-    
+
 }
 
 
 sub or_where {
-    
+
     my ($self, @args) = @_;
-    
+
     for (my $i = 0; $i < @args; $i++) {
-        
+
         my ($key, $value) = ($args[$i], $args[++$i]);
-        
+
         push @{$self->criteria->{where}->{'$or'}},
-            { arg_parser($key => $value) };
-        
+          {arg_parser($key => $value)};
+
     }
-    
+
     return $self;
-    
+
 }
 
 
 sub page {
-    
+
     my ($self, $limit, $skip) = @_;
-    
+
     $skip ||= 0;
-    
+
     my $page = $limit * $skip;
-    
+
     $self->limit($limit);
-    
+
     $self->skip($page);
-    
+
     return $self;
-    
+
 }
 
 
 sub query {
-    
+
     my $self = shift;
-    
-    my $cri = $self->criteria;
-    my $col = $self->collection;
-    my $cur = $col->query($cri->{where});
-       
-       $cur->fields($cri->{select}) if values %{$cri->{select}};
-       $cur->sort($cri->{order}) if values %{$cri->{order}};
-       $cur->limit($cri->{options}->{limit}) if $cri->{options}->{limit};
-       $cur->skip($cri->{options}->{skip}) if $cri->{options}->{skip};
-    
-    return $cur;
-    
+
+    my $cri          = $self->criteria;
+    my $col          = $self->collection;
+    my $mongo_cursor = $col->query($cri->{where});
+
+    $mongo_cursor->fields($cri->{select})          if values %{$cri->{select}};
+    $mongo_cursor->sort($cri->{order})             if values %{$cri->{order}};
+    $mongo_cursor->limit($cri->{options}->{limit}) if $cri->{options}->{limit};
+    $mongo_cursor->skip($cri->{options}->{skip})   if $cri->{options}->{skip};
+
+    return MongoDBI::Document::Storage::Cursor->new(
+        cursor      => $mongo_cursor,
+        build_class => $self->build_class
+    );
 }
 
 
 sub skip {
-    
+
     my ($self, $skip) = @_;
-    
-    $self->criteria->{options}->{skip} = $skip if $skip ;
-    
+
+    $self->criteria->{options}->{skip} = $skip if $skip;
+
     return $self;
-    
+
 }
 
 
 sub sort {
-    
+
     my ($self, %args) = @_;
-    
-    while (my ($key, $value) = each ( %args )) {
-        
+
+    while (my ($key, $value) = each(%args)) {
+
         $self->criteria->{order}->{$key} = $value;
-        
+
     }
-    
+
     return $self;
-    
+
 }
 
 
 sub where {
-    
+
     my ($self, %args) = @_;
-    
+
     %args = arg_parser %args;
-    
-    while (my ($key, $value) = each ( %args )) {
-        
+
+    while (my ($key, $value) = each(%args)) {
+
         $self->criteria->{where}->{$key} = $value;
-        
+
     }
-    
+
     return $self;
-    
+
 }
 
 
 sub where_exists {
-    
+
     my ($self, @args) = @_;
-    
-    foreach my $key ( @args ) {
-        
+
+    foreach my $key (@args) {
+
         $self->criteria->{where}->{$key}->{'$exists'} = boolean::true;
-        
+
     }
-    
+
     return $self;
-    
+
 }
 
 
 sub where_not_exists {
-    
+
     my ($self, @args) = @_;
-    
-    foreach my $key ( @args ) {
-        
+
+    foreach my $key (@args) {
+
         $self->criteria->{where}->{$key}->{'$exists'} = boolean::false;
-        
+
     }
-    
+
     return $self;
-    
+
 }
 
 1;
+
 __END__
 =pod
 
@@ -415,7 +429,7 @@ MongoDBI::Document::Storage::Criterion - MongoDBI Chainable Collection Query Bui
 
 =head1 VERSION
 
-version 0.0.12
+version 0.02
 
 =head1 SYNOPSIS
 
@@ -499,6 +513,7 @@ match in order to return results. The corresponding MongoDB operation is $in.
 
 The any_of method adds a criterion that specifies a set of expressions that any
 can match in order to return results. The underlying MongoDB expression is $or.
+Requires MongoDB >= 1.6
 
     $search->any_of(last_name => 'Penn', 'Teller');
     
@@ -645,13 +660,23 @@ exist in order to return results. The corresponding MongoDB operation is $exists
         "father.name" : { "$exists" : false }
     }
 
-=head1 AUTHOR
+=head1 AUTHORS
+
+=over 4
+
+=item *
 
 Al Newkirk <awncorp@cpan.org>
 
+=item *
+
+Robert Grimes <buu@erxz.com>
+
+=back
+
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2011 by awncorp.
+This software is copyright (c) 2012 by awncorp.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.

@@ -5,12 +5,12 @@ use warnings;
 
 package MongoDBI::Document::Storage::Operation;
 {
-  $MongoDBI::Document::Storage::Operation::VERSION = '0.0.12';
+    $MongoDBI::Document::Storage::Operation::VERSION = '0.02';
 }
 
 use 5.001000;
 
-our $VERSION = '0.0.12'; # VERSION
+our $VERSION = '0.02';    # VERSION
 
 use Moose::Role;
 
@@ -21,844 +21,873 @@ use MongoDBI::Document::Relative;
 use MongoDBI::Document::GridFile;
 
 
+before qw{
+  all
+  collection
+  connection
+  count
+  distinct
+  find
+  find_one
+  find_or_create
+  find_or_new
+  first
+  last
+  reload
+
+  full_name
+  insert
+  name
+  remove
+  save
+  search
+  update
+  }, sub {
+    my $class = ref $_[0] || $_[0];
+
+    $class->connect unless $class->config->database->{connected};
+  };
+
 
 sub all {
-    
+
     my ($class, @where) = @_;
-    
-    my %where = @where == 1 ?
-        (_id => MongoDB::OID->new(value => $where[0])) : @where ;
-    
-    $class = ref $class if ref $class ;
-    
-    $class->connect unless $class->config->database->{connected};
-    
+
+    my %where =
+      @where == 1 ? (_id => MongoDB::OID->new(value => $where[0])) : @where;
+
+    $class = ref $class if ref $class;
+
+
     my $search = $class->search;
-       $search->where(%where) if values %where;
-       
+    $search->where(%where) if values %where;
+
     return $search->query->all;
-    
+
 }
 
 
 sub clone {
-    
+
     my ($self) = @_;
-    
+
     $self->is_instance('clone');
-    
-    die "clone can only be performed on an instance " .
-        "with an ID" unless $self->id;
-    
+
+    die "clone can only be performed on an instance " . "with an ID"
+      unless $self->id;
+
     my $attributes = $self->collapse;
-    
+
     delete $attributes->{_id};
-    
+
     my $class = ref $self;
     my $clone = $class->new(%{$attributes});
-    
+
     return $clone;
-    
+
 }
 
 sub collapse {
 
-    my $self    = shift;
-    my $data    = {};
-    
+    my $self = shift;
+    my $data = {};
+
     # only collapse dirty fields
-    while (my($field, $changes) = each(%{$self->_dirty})) {
-        
-        $data->{$field} = $changes->[-1]->{new_value};
-        
+    foreach my $field (keys %{$self->_dirty}) {
+
+        $data->{$field} = $self->$field;
+
     }
-    
+
     # collapse related doc classes
-    while (my($name, $config) = each(%{$self->config->fields})) {
-        
+    my $field_config = $self->config->fields;
+    for my $name (keys %$field_config) {
+        my $config = $field_config->{$name};
+
         # collapse embedded gridfs documents
         if ($config->{isa} eq 'MongoDBI::Document::GridFile') {
-            
+
             if ($config->{type} eq 'single') {
-                
+
                 my $grids  = $self->$name->target;
                 my $object = $self->$name->object;
-                
+
                 if ($object) {
-                    
+
                     $data->{$name} = $object;
-                    
+
                 }
-                
+
             }
-            
+
             if ($config->{type} eq 'multiple') {
-                
+
                 if ("ARRAY" eq ref $self->$name->object) {
-                    
-                    my $grids  = $self->$name->target;
-                    
+
+                    my $grids = $self->$name->target;
+
                     foreach my $object (@{$self->$name->object}) {
-                        
+
                         push @{$data->{$name}}, $object;
-                        
+
                     }
-                    
+
                 }
-                
+
             }
-            
+
         }
-        
+
         # collapse embedded documents
         elsif ($config->{isa} eq 'MongoDBI::Document::Child') {
-            
+
             if ($config->{type} eq 'single') {
-                
+
                 my $embedded = $self->$name->object->collapse;
                 $data->{$name} = $embedded if $embedded;
-                
+
             }
-            
+
             if ($config->{type} eq 'multiple') {
-                
+
                 if ("ARRAY" eq ref $self->$name->object) {
-                    
+
                     foreach my $object (@{$self->$name->object}) {
-                        
+
                         my $embedded = $object->collapse;
                         push @{$data->{$name}}, $embedded if $embedded;
-                        
+
                     }
-                    
+
                 }
-                
+
             }
-            
+
         }
-        
+
         # collapse related documents
         elsif ($config->{isa} eq 'MongoDBI::Document::Relative') {
-            
+
             if ($config->{type} eq 'single') {
-                
+
                 my $class  = $self->$name->target;
                 my $object = $self->$name->object;
-                
+
                 if ($object) {
-                    
+
                     $data->{$name} = {
                         '$id'  => $object,
                         '$ref' => $class->config->collection->{name}
                     };
-                    
+
                 }
-                
+
             }
-            
+
             if ($config->{type} eq 'multiple') {
-                
+
                 if ("ARRAY" eq ref $self->$name->object) {
-                    
-                    my $class  = $self->$name->target;
-                    
+
+                    my $class = $self->$name->target;
+
                     foreach my $object (@{$self->$name->object}) {
-                        
-                        push @{$data->{$name}}, {
-                            '$id'  => $object,
+
+                        push @{$data->{$name}},
+                          { '$id'  => $object,
                             '$ref' => $class->config->collection->{name}
-                        };
-                        
+                          };
+
                     }
-                    
+
                 }
-                
+
             }
-            
+
         }
-        
+
         # additionally, be mindful of fields with default values
         # if they had been set by the app, they'd be marked as dirty and
         # should exist in $data ... if they haven't been set but have default
         # values, try the accessor
-        if (! defined $data->{$name} && $config->{default}) {
-            
-            $data->{$name} = "CODE" eq ref $config->{default} ?
-                $config->{default}->($self) : $config->{default};
-            
+        if (!defined $data->{$name} && $config->{default}) {
+
+            $data->{$name} =
+              "CODE" eq ref $config->{default}
+              ? $config->{default}->($self)
+              : $config->{default};
+
         }
-        
+
     }
-    
+
     # add id if applicable
     $data->{'_id'} = $self->_id if $self->id;
-    
+
     return $data;
 
 }
 
 
 sub collection {
-    
+
     my $class = shift;
-    
-    $class = ref $class if ref $class ;
-    
-    $class->connect unless $class->config->database->{connected};
-    
+
+    $class = ref $class if ref $class;
+
     return $class->config->_mongo_collection;
-    
+
 }
 
 
 sub connection {
-    
-    my $class = shift;
-    
-    $class = ref $class if ref $class ;
-    
-    $class->connect unless $class->config->database->{connected};
-    
+
+    my $class = ref $_[0] || $_[0];
+
     return $class->config->_mongo_connection;
-    
 }
 
 
 sub count {
-    
+
     my ($class, @where) = @_;
-    
-    my %where = @where == 1 ?
-        (_id => MongoDB::OID->new(value => $where[0])) : @where ;
-    
-    $class = ref $class if ref $class ;
-    
-    $class->connect unless $class->config->database->{connected};
-    
+
+    my %where =
+      @where == 1 ? (_id => MongoDB::OID->new(value => $where[0])) : @where;
+
+    $class = ref $class if ref $class;
+
     my $search = $class->search;
-       $search->where(%where) if values %where;
-       
+    $search->where(%where) if values %where;
+
     return $search->query->count;
-    
+
 }
 
 
 sub create {
-    
+
     my ($class, %args) = @_;
-    
-    $class = ref $class if ref $class ;
-    
+
+    $class = ref $class if ref $class;
+
     my $new = $class->new(%args);
-    
+
     $new->insert;
-    
+
     return $new;
-    
+
+}
+
+
+sub distinct {
+
+    my ($class, $key, %where) = @_;
+
+    $class = ref $class if ref $class;
+
+    my $search = $class->search->where(%where);
+
+    my $db_name = $class->config->database->{'name'};
+
+    my $col_name = $class->config->collection->{'name'};
+
+    my $db = $class->connection->get_database($db_name);
+
+    my $output = $db->run_command(
+        [
+
+            distinct => $col_name,
+            key      => $key,
+            query    => $search->criteria->{where}
+
+        ]
+    );
+
+    return ref $output ? $output->{values} : [];
+
 }
 
 
 sub execute_on {
-    
+
     my $self = shift;
     my $code = pop;
-    
+
     my %args = ();
-    
-    my $db   = $self->config->database;
-    
+
+    my $db = $self->config->database;
+
     if (@_ == 1 && lc($_[0]) eq 'slave' || lc($_[0]) eq 'master') {
-        
+
         if (lc($_[0]) eq 'master') {
-        
-            %args = $db->{master} ?
-                %{$db->{master}} : %{$db} ;
-            
+
+            %args = $db->{master} ? %{$db->{master}} : %{$db};
+
         }
-        
+
         if (lc($_[0]) eq 'slave') {
-            
-            %args = $db->{slaves} ?
-                @{$db->{slaves}}[rand(@{$db->{slaves}})] : %{$db} ;
-            
+
+            %args =
+              $db->{slaves}
+              ? @{$db->{slaves}}[rand(@{$db->{slaves}})]
+              : %{$db};
+
         }
-        
+
     }
     else {
-        
+
         %args = @_ >= 1 ? (host => $_[0]) : @_;
-        
+
     }
-    
+
     die "execute_on requires a FQDN or Server IP address to connect to"
-        unless $args{host};
-        
-    die "execute_on requires a CODEREF to be executed against the target server"
-        unless "CODE" eq ref $code;
-    
-    return $code->($self) # return immediately
-        if lc($args{host}) eq 'localhost' || $args{host} eq '127.0.0.1';
-    
+      unless $args{host};
+
+    die
+      "execute_on requires a CODEREF to be executed against the target server"
+      unless "CODE" eq ref $code;
+
+    return $code->($self)    # return immediately
+      if lc($args{host}) eq 'localhost' || $args{host} eq '127.0.0.1';
+
     my $orig_host = $self->config->database;
-    
+
     $self->config->set_database(%args);
-    $self->config->database->{connected} = 0; 
-    
+    $self->config->database->{connected} = 0;
+
     my $result = $code->($self);
-    
+
     $self->config->set_database(%{$orig_host});
-    $self->config->database->{connected} = 0; # connect
-    
+    $self->config->database->{connected} = 0;    # connect
+
     return $result;
-    
+
 }
 
 sub expand {
-    
+
     my ($class, %data) = @_;
-    
-    $class = ref $class || $class; # ensure class-hood
-    
-    my %args = (); # expanded attribute data
-    
+
+    $class = ref $class || $class;               # ensure class-hood
+
+    my %args = ();                               # expanded attribute data
+
     # ...
     my $config  = $class->config;
     my $db_name = $config->database->{name};
     my $conn    = $config->_mongo_connection;
-    
+
     # fetch the gridfs object, it may be needed
     my $grid_fs = $conn->get_database($db_name)->get_gridfs;
-    
+
     # expand $data into class attributes
-    while (my($name, $config) = each(%{$class->config->fields})) {
-        
+    my $field_config = $class->config->fields;
+    for my $name (keys %$field_config) {
+        my $config = $field_config->{$name};
+
         if ($config->{isa} eq 'MongoDBI::Document::GridFile') {
-            
+
             if ($config->{type} eq 'single') {
-                
+
                 my %gridfile_args = %{$config};
-                my $gridfile = MongoDBI::Document::GridFile->new(
+                my $gridfile      = MongoDBI::Document::GridFile->new(
                     parent => $class,
                     target => $grid_fs,
-                    config => { %gridfile_args },
+                    config => {%gridfile_args},
                 );
-                
+
                 $gridfile->object($data{$name});
-                
+
                 $args{$name} = $gridfile;
-                
+
             }
-            
+
             elsif ($config->{type} eq 'multiple') {
-                
+
                 if ("ARRAY" eq ref $data{$name}) {
-                    
-                    my %gridfile_args = %{$config}; delete $gridfile_args{class};
+
+                    my %gridfile_args = %{$config};
+                    delete $gridfile_args{class};
                     my $gridfile = MongoDBI::Document::GridFile->new(
                         parent => $class,
                         target => $grid_fs,
-                        config => { %gridfile_args },
+                        config => {%gridfile_args},
                     );
-                    
+
                     $gridfile->object([])
-                        unless "ARRAY" eq ref $gridfile->object;
-                    
+                      unless "ARRAY" eq ref $gridfile->object;
+
                     foreach my $doc (@{$data{$name}}) {
-                        
+
                         push @{$gridfile->object}, $doc;
-                        
+
                     }
-                    
+
                     $args{$name} = $gridfile;
-                    
+
                 }
-                
+
             }
-            
+
         }
-        
+
         elsif ($config->{isa} eq 'MongoDBI::Document::Child') {
-            
+
             if ($config->{type} eq 'single') {
-                
-                my %child_args = %{$config}; delete $child_args{class};
+
+                my %child_args = %{$config};
+                delete $child_args{class};
                 my $child = MongoDBI::Document::Child->new(
                     parent => $class,
                     target => $config->{class},
-                    config => { %child_args },
+                    config => {%child_args},
                 );
-                
+
                 # children can have children
                 my @good_data = $config->{class}->expand(%{$data{$name}});
-                
+
                 $child->add(@good_data);
-                
+
                 $args{$name} = $child;
-                
+
             }
-            
+
             elsif ($config->{type} eq 'multiple') {
-                
+
                 if ("ARRAY" eq ref $data{$name}) {
-                    
-                    my %child_args = %{$config}; delete $child_args{class};
+
+                    my %child_args = %{$config};
+                    delete $child_args{class};
                     my $child = MongoDBI::Document::Child->new(
                         parent => $class,
                         target => $config->{class},
-                        config => { %child_args },
+                        config => {%child_args},
                     );
-                    
+
                     foreach my $doc (@{$data{$name}}) {
-                        
+
                         # children can have children, yeah
                         my @good_data = $config->{class}->expand(%{$doc});
-                        
+
                         $child->add(@good_data);
-                        
+
                     }
-                    
+
                     $args{$name} = $child;
-                    
+
                 }
-                
+
             }
-            
+
         }
-        
+
         elsif ($config->{isa} eq 'MongoDBI::Document::Relative') {
-            
+
             if ($config->{type} eq 'single') {
-                
+
                 my %relative_args = %{$config};
-                my $relative = MongoDBI::Document::Relative->new(
+                my $relative      = MongoDBI::Document::Relative->new(
                     parent => $class,
                     target => $config->{class},
-                    config => { %relative_args },
+                    config => {%relative_args},
                 );
-                
+
                 $relative->object($data{$name}->{'$id'});
-                
+
                 $args{$name} = $relative;
-                
+
             }
-            
+
             elsif ($config->{type} eq 'multiple') {
-                
+
                 if ("ARRAY" eq ref $data{$name}) {
-                    
-                    my %relative_args = %{$config}; delete $relative_args{class};
+
+                    my %relative_args = %{$config};
+                    delete $relative_args{class};
                     my $relative = MongoDBI::Document::Relative->new(
                         parent => $class,
                         target => $config->{class},
-                        config => { %relative_args },
+                        config => {%relative_args},
                     );
-                    
+
                     $relative->object([])
-                        unless "ARRAY" eq ref $relative->object;
-                    
+                      unless "ARRAY" eq ref $relative->object;
+
                     foreach my $doc (@{$data{$name}}) {
-                        
+
                         push @{$relative->object}, $doc->{'$id'};
-                        
+
                     }
-                    
+
                     $args{$name} = $relative;
-                    
+
                 }
-                
+
             }
-            
+
         }
-        
+
         else {
-            
+
             $args{$name} = $data{$name} if defined $data{$name};
-            
+
         }
-        
+
     }
-    
+
     # add id if applicable
-    if ( $data{_id} ) {
-        
-        if ( ref $data{_id} ) {
+    if ($data{_id}) {
+
+        if (ref $data{_id}) {
             $args{_id} = $data{_id};
         }
         else {
-            $args{_id} = MongoDB::OID->new( value => $data{'_id'} );
+            $args{_id} = MongoDB::OID->new(value => $data{'_id'});
         }
-        
+
     }
-    
+
     return %args;
-    
+
 }
 
 
 sub find {
-    
+
     my ($class, @where) = @_;
-    
-    my %where = @where == 1 ? 
-        (_id => MongoDB::OID->new(value => $where[0])) : @where ;
-    
-    $class = ref $class if ref $class ;
-    
-    $class->connect unless $class->config->database->{connected};
-    
+
+    my %where =
+      @where == 1 ? (_id => MongoDB::OID->new(value => $where[0])) : @where;
+
+    $class = ref $class if ref $class;
+
     my $search = $class->search;
-       $search->where(%where) if values %where;
-       
+    $search->where(%where) if values %where;
+
     return $search->query;
-    
+
 }
 
 
 sub find_one {
-    
+
     my ($class, @where) = @_;
-    
-    my %where = @where == 1 ? 
-        (_id => MongoDB::OID->new(value => $where[0])) : @where ;
-    
-    $class = ref $class if ref $class ;
-    
-    $class->connect unless $class->config->database->{connected};
-    
+
+    my %where =
+      @where == 1 ? (_id => MongoDB::OID->new(value => $where[0])) : @where;
+
+    $class = ref $class if ref $class;
+
     my $search = $class->search;
-       $search->where(%where) if values %where;
-       $search->limit(-1);
-    
-    my $data = $search->query->next;
-    
-    return $data ? $class->new($class->expand(%{$data})) : undef;
-    
+    $search->where(%where) if values %where;
+    $search->limit(-1);
+
+    return $search->query->next;
 }
 
 
 sub find_or_create {
-    
+
     my ($class, @where) = @_;
-    
-    my %where = @where == 1 ? 
-        (_id => MongoDB::OID->new(value => $where[0])) : @where ;
-    
-    $class = ref $class if ref $class ;
-    
-    $class->connect unless $class->config->database->{connected};
-    
+
+    my %where =
+      @where == 1 ? (_id => MongoDB::OID->new(value => $where[0])) : @where;
+
+    $class = ref $class if ref $class;
+
     my $instance = $class->find_one(%where);
-    
-    return $instance ? $instance : $class->create(%where) ;
-    
+
+    return $instance ? $instance : $class->create(%where);
+
 }
 
 
 sub find_or_new {
-    
+
     my ($class, @where) = @_;
-    
-    my %where = @where == 1 ? 
-        (_id => MongoDB::OID->new(value => $where[0])) : @where ;
-    
-    $class = ref $class if ref $class ;
-    
-    $class->connect unless $class->config->database->{connected};
-    
+
+    my %where =
+      @where == 1 ? (_id => MongoDB::OID->new(value => $where[0])) : @where;
+
+    $class = ref $class if ref $class;
+
     my $instance = $class->find_one(%where);
-    
-    return $instance ? $instance : $class->new($class->expand(%where)) ;
-    
+
+    return $instance ? $instance : $class->new($class->expand(%where));
+
 }
 
 
 sub full_name {
-    
+
     my $self = shift;
-    
-    $self->connect unless $self->config->database->{connected};
-    
+
     my $collection = $self->_mongo_collection;
     my $connection = $self->_mongo_connection;
-    
+
     return join ".", $connection->db_name, $collection->name;
-    
+
 }
 
 
 sub first {
-    
+
     my ($class, @where) = @_;
-    
-    my %where = @where == 1 ? 
-        (_id => MongoDB::OID->new(value => $where[0])) : @where ;
-    
-    $class = ref $class if ref $class ;
-    
-    $class->connect unless $class->config->database->{connected};
-    
+
+    my %where =
+      @where == 1 ? (_id => MongoDB::OID->new(value => $where[0])) : @where;
+
+    $class = ref $class if ref $class;
+
     my $search = $class->search;
-       $search->where(%where) if values %where;
-       $search->limit(-1);
-       $search->asc_sort('_id');
-    
-    my $data = $search->query->next;
-    
-    return $data ? $class->new($class->expand(%{$data})) : undef;
-    
+    $search->where(%where) if values %where;
+    $search->limit(-1);
+    $search->asc_sort('_id');
+
+    return $search->query->next;
 }
 
 
 sub insert {
-    
+
     my ($self) = @_;
-    
+
     $self->is_instance('insert');
-    
-    die "insert cannot be performed on an instance " .
-        "with an ID (" . $self->id . ")" if $self->id;
-    
-    $self->connect unless $self->config->database->{connected};
-    
+
     my $collection = $self->config->_mongo_collection;
-    
-    $self->_id($collection->insert($self->collapse, $self->config->options));
-    
+
+    my $new_id = $collection->insert($self->collapse, $self->config->options);
+    $self->_id($new_id) unless $self->_id;
+
     return $self;
-    
+
 }
 
 sub is_instance {
-    
+
     my ($self, $op) = @_;
-    
+
     $op ||= "this operation";
-    
-    die $op . " can only be performed on an instance, " .
-        "try using " . ($self||'Class') . "->new(...);"
-        
-        unless ref $self ;
-        
-    return $self ;
-    
+
+    die $op
+      . " can only be performed on an instance, "
+      . "try using "
+      . ($self || 'Class')
+      . "->new(...);"
+
+      unless ref $self;
+
+    return $self;
+
 }
 
 
 sub last {
-    
+
     my ($class, @where) = @_;
-    
-    my %where = @where == 1 ? 
-        (_id => MongoDB::OID->new(value => $where[0])) : @where ;
-    
-    $class = ref $class if ref $class ;
-    
-    $class->connect unless $class->config->database->{connected};
-    
+
+    my %where =
+      @where == 1 ? (_id => MongoDB::OID->new(value => $where[0])) : @where;
+
+    $class = ref $class if ref $class;
+
     my $search = $class->search;
-       $search->where(%where) if values %where;
-       $search->limit(-1);
-       $search->desc_sort('_id');
-    
-    my $data = $search->query->next;
-    
-    return $data ? $class->new($class->expand(%{$data})) : undef;
-    
+    $search->where(%where) if values %where;
+    $search->limit(-1);
+    $search->desc_sort('_id');
+
+    return $search->query->next;
 }
 
 
 sub name {
-    
+
     my $self = shift;
-    
-    $self->connect unless $self->config->database->{connected};
-    
+
     return $self->config->_mongo_collection->name;
-    
+
 }
 
 
 sub query {
-    
+
     my ($self, @filters) = @_;
-    
+
     my $config = $self->config;
-    
+
     confess("config attribute not present") unless blessed($config);
 
     return $self->search(@filters)->query;
-    
+
 }
 
 
 sub reload {
-    
+
     my ($self) = @_;
-    
+
     $self->is_instance('reload');
-    
-    die "reload can only be performed on an instance " .
-        "with an ID" unless $self->id;
-    
-    my %where = (_id => $self->_id) ;
-    
-    my $class = ref $self ;
-    
-    $class->connect unless $class->config->database->{connected};
-    
+
+    die "reload can only be performed on an instance " . "with an ID"
+      unless $self->id;
+
+    my %where = (_id => $self->_id);
+
+    my $class = ref $self;
+
     my $search = $class->search;
-       $search->where(%where) ;
-       $search->limit(-1);
-    
+    $search->where(%where);
+    $search->limit(-1);
+
     my $data = $search->query->next;
-    
-    return $data ? $class->new($class->expand(%{$data})) : undef;
-    
+
+    #FIXME What is the correct behaviour here, aren't we just always
+    # creating a new object?
+    #return $data ? $class->new($class->expand(%{$data})) : undef;
+    return $data;
+
 }
 
 
 sub remove {
-    
+
     my ($self) = @_;
-    
+
     $self->is_instance('remove');
-    
-    die "remove can only be performed on an instance " .
-        "with an ID" unless $self->id;
-    
-    $self->connect unless $self->config->database->{connected};
-    
+
+    die "remove can only be performed on an instance " . "with an ID"
+      unless $self->id;
+
     my $collection = $self->config->_mongo_collection;
-    
-    $collection->remove({ _id => $self->_id }, $self->config->options) ;
-    
+
+    $collection->remove({_id => $self->_id}, $self->config->options);
+
     # no longer assoc to a record
     $self->_id->{value} = 0;
-    
+
     # leaving dirty tracking in-tact
-    
+
     return $self;
-    
+
 }
 
 
 sub save {
-    
+
     my ($self) = @_;
-    
+
     $self->is_instance('save');
-    
-    die "save cannot be performed on an instance " .
-        "without an ID" unless $self->id;
-        
-    die "save cannot be performed on an instance " .
-        "without any altered keys" unless values %{$self->_dirty};
-    
-    $self->connect unless $self->config->database->{connected};
-    
+
+    die "save cannot be performed on an instance " . "without an ID"
+      unless $self->id;
+
+    die "save cannot be performed on an instance "
+      . "without any altered keys"
+      unless values %{$self->_dirty};
+
     my $collection = $self->config->_mongo_collection;
-    
+
     $collection->save($self->collapse, $self->config->options);
-    
+
     return $self;
-    
+
 }
 
 
 sub search {
-    
+
     my ($self, @searches) = @_;
-    
+
     my $config = $self->config;
-    
+
     confess("config attribute not present") unless blessed($config);
 
-    $self->connect unless $config->database->{connected};
-    
     my $criteria = MongoDBI::Document::Storage::Criterion->new(
-        collection => $config->_mongo_collection
+        collection => $config->_mongo_collection,
+        build_class => ref($self) ? ref($self) : $self,
     );
-    
+
     if (@searches) {
-        
+
         while (my $key = shift @searches) {
-            
+
             my @args = ();
-            
+
             while (@searches && !$config->searches->{$searches[0]}) {
-                
+
                 push @args, shift @searches;
-                
+
             }
-            
+
             my $search = $config->searches->{$key};
-            
+
             $criteria = $search->($criteria, $self, @args);
-            
+
         }
-        
+
     }
-    
+
     return $criteria;
-    
+
 }
 
 # TODO: to_bson method
 sub to_bson {
-    
+
     # ...
-    
+
 }
 
 # TODO: to_hash method
 sub to_hash {
-    
+
     # ...
-    
+
 }
 
 # TODO: to_json method
 sub to_json {
-    
+
     # ...
-    
+
 }
 
 
 sub update {
-    
+
     my ($self, %options) = @_;
-    
+
     $self->is_instance('update');
-    
-    die "update cannot be performed on an instance " .
-        "without an ID" unless $self->id;
-        
-    die "update cannot be performed on an instance " .
-        "without any altered keys" unless values %{$self->_dirty};
-    
-    $self->connect unless $self->config->database->{connected};
-    
+
+    die "update cannot be performed on an instance " . "without an ID"
+      unless $self->id;
+
+    die "update cannot be performed on an instance "
+      . "without any altered keys"
+      unless values %{$self->_dirty};
+
     my $collection = $self->config->_mongo_collection;
-    
+
     my $change = delete $options{set}; # should the doc be appended or replaced
-       
-       $change ||= 1; # yes, by default
-    
+
+    $change ||= 1;                     # yes, by default
+
     $options{upsert}   ||= 0;
     $options{multiple} ||= 1;
-    
-    my $data = $change ? $self->collapse : { '$set' => $self->collapse };
-    
-    $collection->update({ _id => $self->_id }, $data, $self->config->options);
-    
+
+    my $data = $change ? $self->collapse : {'$set' => $self->collapse};
+
+    $collection->update({_id => $self->_id}, $data, $self->config->options);
+
     return $self;
-    
+
 }
 
 no Moose::Role;
 
 1;
+
 __END__
 =pod
 
@@ -868,7 +897,7 @@ MongoDBI::Document::Storage::Operation - Standard MongoDBI Document/Collection O
 
 =head1 VERSION
 
-version 0.0.12
+version 0.02
 
 =head1 SYNOPSIS
 
@@ -968,6 +997,20 @@ the database and returns the newly create class instance.
     $cd->title('Greatest Hits');
     
     $cd->save;
+
+=head2 distinct
+
+The distinct method, called on a class or instance, allows you to quickly query
+a column in the collection and return the unique values as an arrayref using the
+syntax described in L<MongoDBI::Document::Storage::Criterion>.
+
+The distinct method always returns an arrayref it accepts a single argument
+(just the key/column name) and optionally a list of key/value pairs in (query
+syntax form).
+
+    my $artists = CDDB::Album->distinct('artist');
+    
+    my $new_artists = CDDB::Album->distinct('artist', @query);
 
 =head2 execute_on
 
@@ -1315,13 +1358,23 @@ what it does). The following is an example:
     
     $cd1->update(set => 0); # update, replacing the document with title and ID
 
-=head1 AUTHOR
+=head1 AUTHORS
+
+=over 4
+
+=item *
 
 Al Newkirk <awncorp@cpan.org>
 
+=item *
+
+Robert Grimes <buu@erxz.com>
+
+=back
+
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2011 by awncorp.
+This software is copyright (c) 2012 by awncorp.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.

@@ -12,8 +12,8 @@ app {
 
     # load child doc classes
     classes => {
-        self => 1 # loads CDDB::*
-    }
+        self => 1    # loads CDDB::*
+      }
 
 };
 
